@@ -1,0 +1,6 @@
+*.csv
+*.txt
+*.rar
+*.7z
+*.tsv
+bin/
