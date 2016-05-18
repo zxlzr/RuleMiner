@@ -219,8 +219,12 @@ public class KB {
     protected Map<String, Int> get(Map<String, Map<String, Map<String, Int>>> map, String key) {
     	Map<String, Map<String, Int>> m = map.get(key);
     	Map<String, Int> out = new HashMap<String, Int>();
-    	for (Entry<String, Map<String, Int>> entry : m.entrySet())
-    		out.put(entry.getKey(), new Int(entry.getValue().size()));
+    	try {
+	    	for (Entry<String, Map<String, Int>> entry : m.entrySet())
+	    		out.put(entry.getKey(), new Int(entry.getValue().size()));
+    	} catch (Exception e) {
+    		e.printStackTrace();
+    	}
 		return out;
 	}
     
@@ -259,15 +263,15 @@ public class KB {
 	    		}
 	
 	    	case 1: // get relations frequency
-	    		if (isVariable(projectionTriple[1])) { // ?x ?r object
+	    		if (isVariable(projectionTriple[0])) { // ?x ?r object
 	    			return get(objectRelationSubjectMap, projectionTriple[2]);
 	    		} else { // ?subject ?r ?y
-	    			return get(subjectRelationObjectMap, projectionTriple[1]);
+	    			return get(subjectRelationObjectMap, projectionTriple[0]);
 	    		}
 	
 	    	case 2: // get objects frequency
 	    		if (isVariable(projectionTriple[1])) { // ?subject ?r ?y
-	    			return get(subjectObjectRelationMap, projectionTriple[2]);
+	    			return get(subjectObjectRelationMap, projectionTriple[0]);
 	    		} else { // ?x relation ?y
 	    			return get(relationObjectSubjectMap, projectionTriple[1]);
 	    		}
@@ -292,7 +296,7 @@ public class KB {
     		try (Instantiator insty = new Instantiator(otherTriples, projectionTriple[pos])) {
     			for (String inst : resultsOneVariable(projectionTriple).keySet()) {
     				if(existsBS(insty.instantiate(inst))) {
-    					result.get(inst).value++;
+    					MapAdd(result, inst, 1);
     				}
     			}
     		}
@@ -312,7 +316,7 @@ public class KB {
 					insty1.instantiate(val1);
 					for (String val2 : instantiations.get(val1).keySet()) {
 						if (existsBS(insty2.instantiate(val2)))
-							result.get(firstVar == pos ? val1 : val2).value++;
+	    					MapAdd(result, firstVar == pos ? val1 : val2, 1);
 					}
 				}
 			}

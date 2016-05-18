@@ -26,7 +26,7 @@ public class MiningAssistant {
 
 	protected HashMap<String, Double> headCardinalities = null;
 	
-	private boolean allowConstants = false;
+	private boolean allowConstants = true;
 	
 	private boolean enforceConstants = false;
 	
@@ -124,6 +124,54 @@ public class MiningAssistant {
     	}
     	return out;
     }
+    
+    public Collection<Rule> getInitialAtomsWithInstantiatedAtoms(double minSupportThreshold) {
+    	Collection<Rule> out = new LinkedHashSet<Rule>();
+    	List<String[]> otherProjectionTriples = new ArrayList<String[]>();
+    	String[] projectionTriple = {"?x", "?y", "?z"};
+    	Map<String, Int> relations = this.kb.countProjectionBindings(projectionTriple[1], projectionTriple, otherProjectionTriples);
+    	
+    	Rule query = new Rule();
+    	String[] pattern = query.getTriplePattern();
+    	for (Entry<String, Int> relation : relations.entrySet()) {
+    		double cardinality = relations.get(relation.getKey()).value;
+    		if(cardinality >= minSupportThreshold) {
+    			String[] succedent = pattern.clone();
+    			succedent[1] = relation.getKey();
+    			
+    			int countVarPos;
+    			int nVars = KB.numVariables(succedent);
+    			if(nVars == 1){
+    				countVarPos = KB.getFirstVarPos(succedent);
+    			}else{
+    				countVarPos = kb.isFunctional(succedent[1]) ? 0 : 2;
+    			}
+    			
+    			Rule candidate = new Rule(succedent, cardinality);
+				candidate.setFunctionalVariablePosition(countVarPos);
+    			out.add(candidate);
+    			
+    			Map<String, Int> objects = this.kb.countProjectionBindings(succedent[2], succedent, otherProjectionTriples);
+    			for (Entry<String, Int> object : objects.entrySet()) {
+    				if (object.getValue().value >= minSupportThreshold) {
+    					succedent = succedent.clone();
+    	    			succedent[2] = object.getKey();
+    	    			nVars = KB.numVariables(succedent);
+    	    			if(nVars == 1){
+    	    				countVarPos = KB.getFirstVarPos(succedent);
+    	    			}else{
+    	    				countVarPos = kb.isFunctional(succedent[1]) ? 0 : 2;
+    	    			}
+    	    			
+    	    			candidate = new Rule(succedent, cardinality);
+    					candidate.setFunctionalVariablePosition(countVarPos);
+    	    			out.add(candidate);
+    				}
+    			}
+    		}
+    	}
+    	return out;
+    }
 
     public Collection<Rule> getDanglingAtoms(Rule rule, double minCardinality) {
     	Collection<Rule> output = new ArrayList<Rule>();
@@ -201,8 +249,8 @@ public class MiningAssistant {
     	List<String> srcVars;
     	List<String> destVars;
     	
-    	if(allVars.size() < 2)
-    		return output;
+//    	if(allVars.size() < 2)
+//    		return output;
     	
     	if(rule.isClosed()) {
     		srcVars = allVars;
@@ -236,12 +284,17 @@ public class MiningAssistant {
     					rule.add(newTriple);
     					Map<String, Int> promisingRelations = this.kb.countProjectionBindings(newTriple[1], rule.getHead(), rule.getBody());
     					rule.getTriples().remove(nPatterns);
-    					
+
+				        if (KB.numVariables(rule.getHead()) == 1) {
+				        	int a = 1;
+				        	a++;
+				        }
     					List<String> listOfPromisingRelations = new ArrayList<String>();
     					listOfPromisingRelations.addAll(promisingRelations.keySet());
     					//= promisingRelations.decreasingKeys();
 						for(String relation: listOfPromisingRelations){
 							long cardinality = promisingRelations.get(relation).value;
+							
 							if (cardinality < minCardinality) {
 								continue;
 							}
@@ -250,7 +303,11 @@ public class MiningAssistant {
 							if (rule.cardinalityForRelation(relation) >= this.recursivityLimit) {
 								continue;
 							}
-							
+
+					        if (KB.numVariables(rule.getHead()) == 1) {
+					        	int a = 1;
+					        	a++;
+					        }
 //							if (this.bodyExcludedRelations != null 
 //									&& this.bodyExcludedRelations.contains(relation)) {
 //								continue;
@@ -291,7 +348,7 @@ public class MiningAssistant {
     	List<String> queryFreshVariables = rule.getOpenVars();
     	if (rule.getRealLength() < this.maxLen - 1 || queryFreshVariables.size() < 2) {
     		for (Rule candidate : danglingEdges) {
-    			int lastTripplePatternIndex = candidate.getTriples().size();
+    			int lastTripplePatternIndex = candidate.getTriples().size() - 1;
     			String []lastTriplePattern = candidate.getTriples().get(lastTripplePatternIndex);
     			List<String> candidateFreshVariables = candidate.getOpenVars();
     			int danglingPosition = 0;
@@ -453,6 +510,10 @@ public class MiningAssistant {
     	}
         if (!candidate.isClosed())
             return false;
+        if (KB.numVariables(candidate.getHead()) == 1) {
+        	int a = 1;
+        	a++;
+        }
         for (int i=0; i<candidate.getTriples().size(); i++) {
         	if (!KB.isVariable(candidate.getTriples().get(i)[0]) || !KB.isVariable(candidate.getTriples().get(i)[2])) {
         		int a = 1;
@@ -467,6 +528,10 @@ public class MiningAssistant {
         if (candidate.containsLevel2RedundantSubgraphs())
             return false;
         Collection<Rule> parents = parentOfRule(candidate);
+        if (KB.numVariables(candidate.getHead()) == 1) {
+        	int a = 1;
+        	a++;
+        }
         for(Rule rule : parents) {
             double r1, r2;
             if (confidenceMetric == ConfidenceMetric.StdConfidence) {

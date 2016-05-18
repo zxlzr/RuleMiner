@@ -19,7 +19,6 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.cli.PosixParser;
 
-import com.zzq.ruleminer.KB.Instantiator;
 import com.zzq.ruleminer.MiningAssistant.ConfidenceMetric;
 
 public class RuleMiner {
@@ -137,7 +136,7 @@ public class RuleMiner {
     
     public Collection<Rule> mining() {
         Collection<Rule> out = new LinkedHashSet<Rule>();
-        Collection<Rule> q = miningAssistant.getInitialAtoms(100);
+        Collection<Rule> q = miningAssistant.getInitialAtomsWithInstantiatedAtoms(100);
         
         System.out.println("Using " + miningAssistant.getConfidenceMetric());
         System.out.println("Minimum StdConfidence Threshold: " + miningAssistant.getMinStdConfidence());
