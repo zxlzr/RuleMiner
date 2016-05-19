@@ -70,11 +70,17 @@ public class RuleMiner {
                 .withDescription("numThread")
                 .create("numThread");
 
+        @SuppressWarnings("static-access")
+        Option allowConst = OptionBuilder.withArgName("allowConst")
+                .withDescription("allowConst")
+                .create("const");
+
         options.addOption(stdConfThresholdOpt);
         options.addOption(pcaConfThresholdOpt);
         options.addOption(headCoverageOpt);
         options.addOption(maxDepthOpt);
         options.addOption(numThreadOpt);
+        options.addOption(allowConst);
         
         CommandLine cli = null;
 
@@ -124,11 +130,14 @@ public class RuleMiner {
         if (cli.hasOption("numThread")) {
         	numThread = Integer.parseInt(cli.getOptionValue("numThread"));
         }
+
+        if (cli.hasOption("const")) {
+        	miningAssistant.setAllowConstants(true);
+        }
         
         try {
             outputStream = new FileOutputStream("output.csv");
         } catch (FileNotFoundException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
         return true;
@@ -136,7 +145,12 @@ public class RuleMiner {
     
     public Collection<Rule> mining() {
         Collection<Rule> out = new LinkedHashSet<Rule>();
-        Collection<Rule> q = miningAssistant.getInitialAtomsWithInstantiatedAtoms(100);
+        Collection<Rule> q = null;
+        if (miningAssistant.getAllowConstants()) {
+        	q = miningAssistant.getInitialAtomsWithInstantiator(50);
+        } else {
+        	q = miningAssistant.getInitialAtoms(100);
+        }
         
         System.out.println("Using " + miningAssistant.getConfidenceMetric());
         System.out.println("Minimum StdConfidence Threshold: " + miningAssistant.getMinStdConfidence());

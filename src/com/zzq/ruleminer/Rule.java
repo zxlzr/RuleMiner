@@ -48,13 +48,25 @@ public class Rule {
     	this();
     	this.setSupport((long)cardinality);
     	this.add(atom);
-    	this.varPatternCnt = atom[2].charAt(1) - 'a' + 1;
+    	if (KB.isVariable(atom[0]) && this.varPatternCnt <= atom[0].charAt(1) - 'a') {
+    		this.varPatternCnt = atom[0].charAt(1) - 'a' + 1;
+    	}
+    	if (KB.isVariable(atom[2]) && this.varPatternCnt <= atom[2].charAt(1) - 'a') {
+    		this.varPatternCnt = atom[2].charAt(1) - 'a' + 1;
+    	}
     }
     
     public Rule(Rule rule, String[] atom, long support) {
     	this(rule, support);
     	this.add(atom);
-    	this.varPatternCnt = atom[2].charAt(1) - 'a' + 1;
+    	this.varPatternCnt = rule.varPatternCnt;
+
+    	if (KB.isVariable(atom[0]) && this.varPatternCnt <= atom[0].charAt(1) - 'a') {
+    		this.varPatternCnt = atom[0].charAt(1) - 'a' + 1;
+    	}
+    	if (KB.isVariable(atom[2]) && this.varPatternCnt <= atom[2].charAt(1) - 'a') {
+    		this.varPatternCnt = atom[2].charAt(1) - 'a' + 1;
+    	}
     }
     
     public Rule(Rule rule, long support) {
@@ -259,6 +271,9 @@ public class Rule {
         if (!this.getHead()[1].equals(rule.getHead()[1])) {
             return false;
         }
+        if (this.getOpenVars().size() != rule.getOpenVars().size()) {
+        	return false;
+        }
 //        RuleGraphBak rg1 = new RuleGraphBak(this);
 //        RuleGraphBak rg2 = new RuleGraphBak(rule);
 //        return rg1.calcHash() == rg2.calcHash();
@@ -285,7 +300,7 @@ public class Rule {
     	} else {
     		result[2] = "?" + (char)('a' + varPatternCnt % 26) + varPatternCnt / 26;
     	}
-    	varPatternCnt++;
+    	varPatternCnt--;
     	return result;
     }
        
@@ -299,7 +314,7 @@ public class Rule {
     				varHistogram.put(triple[0], new Int(1));
     			}
     		}
-    		if(!triple[2].equals(triple[0])) {
+    		if(!triple[2].equals(triple[0]) && KB.isVariable(triple[2])) {
     			if (varHistogram.containsKey(triple[2])) {
     				varHistogram.get(triple[2]).value++;
     			} else {
@@ -388,7 +403,10 @@ public class Rule {
     }
     
     public boolean containsLevel2RedundantSubgraphs() {
-        if (!isClosed() || triples.size() < 4 || triples.size() % 2 == 1) {
+//        if (!isClosed() || triples.size() < 4 || triples.size() % 2 == 1) {
+//            return false;
+//        }
+        if (!isClosed() || triples.size() % 2 == 1) {
             return false;
         }
 
