@@ -642,6 +642,32 @@ public class MiningAssistant {
     	return output;
     }
     
+    public Collection<Rule> getOpenedAtoms(Rule in, double minCardinality) {
+    	Collection<Rule> output = new ArrayList<Rule>();
+    	if (!in.getOpened()) {
+    		return output;
+    	}
+    	String[] newTriple = in.getTriplePattern();
+    	for (int openPos=0; openPos<=2; openPos += 2) {
+    		int fixedPos = 2 - openPos;
+    		int nPatterns = in.getTriples().size();
+    		for (String fixedVar : in.getFixedVars()) {
+    			String tmp = newTriple[openPos];
+    			newTriple[openPos] = fixedVar;
+        		in.add(newTriple);
+        		in.getTriples().remove(nPatterns);
+        		Map<String, Int> relations = this.kb.countProjectionBindings(newTriple[1], in.getHead(), in.getBody());
+        		for (Entry<String, Int> entry : relations.entrySet()) {
+        			// TODO
+        		}
+        		
+    			newTriple[openPos] = tmp;
+    		}
+    		
+    	}
+    	return output;
+    }
+    
     public long getTotalCount(Rule candidate) {
 		if(countAlwaysOnSubject){
 			return totalSubjectCount;

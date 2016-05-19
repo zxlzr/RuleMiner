@@ -24,6 +24,8 @@ public class Rule {
     
     public String flag = "";
     
+    private boolean opened = false;
+    
 //    private String[] head = new String[3];
 //    private List<String[]> body = new ArrayList<String[]>();
     
@@ -171,7 +173,15 @@ public class Rule {
         this.pcaConfidenceUpperBound = pcaConfidenceUpperBound;
     }
 
-    public String[] getHead() {
+    public boolean getOpened() {
+		return opened;
+	}
+
+	public void setOpened(boolean opened) {
+		this.opened = opened;
+	}
+
+	public String[] getHead() {
 		return this.triples.get(0);
 	}
 
@@ -520,4 +530,19 @@ public class Rule {
     		System.out.println(Arrays.toString(q.getTriplePattern()));
     	}
     }
+
+	public List<String> getFixedVars() {
+		if (this.getTriples().size() == 1) {
+			return this.getAllVars();
+		}
+		List<String> fixedVars = new ArrayList<String>();
+    	Map<String, Int> varGram = getVarHistogram();
+    	for (Entry<String, Int> var : varGram.entrySet()) {
+    		if (varGram.get(var.getKey()).value > 1) {
+    			fixedVars.add(var.getKey());
+    			break;
+    		}
+    	}
+		return fixedVars;
+	}
 }
