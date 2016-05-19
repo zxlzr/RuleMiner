@@ -176,6 +176,24 @@ public class MiningAssistant {
     	    			out.add(candidate);
     				}
     			}
+    			
+    			Map<String, Int> subjects = this.kb.countProjectionBindings(succedent[0], succedent, otherProjectionTriples);
+    			for (Entry<String, Int> subject : subjects.entrySet()) {
+    				if (subject.getValue().value >= minSupportThreshold) {
+    					succedent = succedent.clone();
+    	    			succedent[0] = subject.getKey();
+    	    			nVars = KB.numVariables(succedent);
+    	    			if(nVars == 1){
+    	    				countVarPos = KB.getFirstVarPos(succedent);
+    	    			}else{
+    	    				countVarPos = kb.isFunctional(succedent[1]) ? 0 : 2;
+    	    			}
+    	    			
+    	    			candidate = new Rule(succedent, cardinality);
+    					candidate.setFunctionalVariablePosition(countVarPos);
+    	    			out.add(candidate);
+    				}
+    			}
     		}
     	}
     	return out;
@@ -292,10 +310,11 @@ public class MiningAssistant {
                     Rule candidate = new Rule(rule, newTriple, cardinality);
 
                     if (!candidate.isRedundantRecursive()) {
-                       candidate.setHeadCoverage(candidate.getSupport() / this.headCardinalities.get(candidate.getHeadRelation()));
-                       candidate.setSupportRatio(candidate.getSupport() / this.kb.getSize());
-                       candidate.setParent(rule);  
-                       output.add(candidate);
+                    	candidate.setHeadCoverage(candidate.getSupport() / this.headCardinalities.get(candidate.getHeadRelation()));
+                    	candidate.setSupportRatio(candidate.getSupport() / this.kb.getSize());
+                    	candidate.setParent(rule);
+                    	output.add(candidate);
+   	    				candidate.flag = "DanglingAtomsWithInstantiator";
                     }
                 }
     	    }
@@ -389,6 +408,7 @@ public class MiningAssistant {
 								candidate.setSupportRatio((double)cardinality / (double)this.kb.getSize());
 								candidate.setParent(rule);
 								output.add(candidate);
+								candidate.flag = new String("ClosingAtoms");
 							}
 						}
     				}
@@ -426,7 +446,7 @@ public class MiningAssistant {
     		} else if (openVars.size() == 2) {
     			destVars = openVars;
     		} else {
-    			destVars = new ArrayList<String>();
+    			destVars = allVars;
     		}
     	}
     	
@@ -438,6 +458,7 @@ public class MiningAssistant {
 			for (int i=0; i<2; i++) {
 	    		int joinPos = varSetups[i * 2];
 	    		int closePos = varSetups[i * 2 + 1];
+	    		String tmp = newTriple[joinPos];
 				newTriple[joinPos] = srcVars.get(0);
 				rule.add(newTriple);
 				Map<String, Int> promisingRelations = this.kb.countProjectionBindings(newTriple[1], rule.getHead(), rule.getBody());
@@ -452,6 +473,18 @@ public class MiningAssistant {
 					}
 					newTriple[1] = entry.getKey();
 					rule.getTriples().get(rule.getTriples().size() - 1)[1] = new String(newTriple[1]);
+					if (rule.getTriples().size() == 3
+							&& rule.getTriples().get(2)[1].equals("<livesIn>")
+							&& rule.getTriples().get(2)[2].equals("?c")
+							&& rule.getTriples().get(1)[0].equals("?a")
+							&& rule.getTriples().get(1)[1].equals("<isCitizenOf>")
+							&& rule.getTriples().get(1)[2].equals("?c")
+							&& rule.getTriples().get(0)[0].equals("?a")
+							&& rule.getTriples().get(0)[1].equals("<isCitizenOf>")
+							&& rule.getTriples().get(0)[2].equals("<United_Kingdom>")) {
+						int a = 1;
+						a++;
+					}
 					promisingObjects = this.kb.countProjectionBindings(newTriple[closePos], rule.getHead(), rule.getBody());
 					for (Entry<String, Int> objects : promisingObjects.entrySet()) {
 						cardinality = objects.getValue().value;
@@ -460,12 +493,17 @@ public class MiningAssistant {
 						}
 						Rule candidate = new Rule(rule, cardinality);
 						candidate.getTriples().get(candidate.getTriples().size() - 1)[closePos] = new String(objects.getKey());
+						if(candidate.isRedundantRecursive()) {
+							continue;
+						}
 						candidate.setParent(rule);
 						candidate.setHeadCoverage((double)cardinality / (double)this.headCardinalities.get(candidate.getHeadRelation()));
 						candidate.setSupportRatio((double)cardinality / (double)this.kb.getSize());
 						output.add(candidate);
+   	    				candidate.flag = new String("ClosingAtomsWithInstantiator");
 					}
 				}
+				newTriple[joinPos] = tmp;
 				rule.getTriples().remove(nPatterns);
 			}
 		}
@@ -500,16 +538,6 @@ public class MiningAssistant {
 							if (rule.cardinalityForRelation(relation) >= this.recursivityLimit) {
 								continue;
 							}
-
-//							if (this.bodyExcludedRelations != null 
-//									&& this.bodyExcludedRelations.contains(relation)) {
-//								continue;
-//							}
-//							
-//							if (this.bodyTargetRelations != null 
-//									&& !this.bodyTargetRelations.contains(relation)) {
-//								continue;
-//							}
 							
 							//Here we still have to make a redundancy check							
 							newTriple[1] = relation;
@@ -521,6 +549,19 @@ public class MiningAssistant {
 								candidate.setSupportRatio((double)cardinality / (double)this.kb.getSize());
 								candidate.setParent(rule);
 								output.add(candidate);
+		   	    				candidate.flag = new String("ClosingAtomsWithInstantiator2");
+								if (candidate.getTriples().size() == 3
+										&& candidate.getTriples().get(2)[1].equals("<livesIn>")
+										&& candidate.getTriples().get(2)[2].equals("?c")
+										&& candidate.getTriples().get(1)[0].equals("?a")
+										&& candidate.getTriples().get(1)[1].equals("<isCitizenOf>")
+										&& candidate.getTriples().get(1)[2].equals("?c")
+										&& candidate.getTriples().get(0)[0].equals("?a")
+										&& candidate.getTriples().get(0)[1].equals("<isCitizenOf>")
+										&& candidate.getTriples().get(0)[2].equals("<United_Kingdom>")) {
+									int a = 1;
+									a++;
+								}
 								Map<String, Int> promisingObjects = this.kb.countProjectionBindings(newTriple[2], candidate.getHead(), candidate.getBody());
 								for (Entry<String, Int> entry : promisingObjects.entrySet()) {
 									cardinality = entry.getValue().value;
@@ -534,6 +575,7 @@ public class MiningAssistant {
 									candObj.setSupportRatio((double)cardinality / (double)this.kb.getSize());
 									candObj.setParent(rule);
 									output.add(candObj);
+			   	    				candidate.flag = new String("ClosingAtomsWithInstantiator3");
 								}
 							}
 						}
@@ -567,6 +609,18 @@ public class MiningAssistant {
 				// getInstantiatedAtoms(candidate, candidate, lastTriplePatternIndex, danglingPosition, minSupportThreshold, output);
 				String []danglingEdge = candidate.getTriples().get(lastTripplePatternIndex);
 				// TODO The next line may have some problems...
+				if (candidate.getTriples().size() == 3
+						&& candidate.getTriples().get(2)[1].equals("<livesIn>")
+						&& candidate.getTriples().get(2)[2].equals("?c")
+						&& candidate.getTriples().get(1)[0].equals("?a")
+						&& candidate.getTriples().get(1)[1].equals("<isCitizenOf>")
+						&& candidate.getTriples().get(1)[2].equals("?c")
+						&& candidate.getTriples().get(0)[0].equals("?a")
+						&& candidate.getTriples().get(0)[1].equals("<isCitizenOf>")
+						&& candidate.getTriples().get(0)[2].equals("<United_Kingdom>")) {
+					int a = 1;
+					a++;
+				}
 				Map<String, Int> constants = this.kb.countProjectionBindings(danglingEdge[danglingPosition], candidate.getHead(), candidate.getBody());
 				for (Entry<String, Int> constant : constants.entrySet()) {
 					long cardinality = constant.getValue().value;
@@ -579,6 +633,7 @@ public class MiningAssistant {
 							cand.setSupportRatio((double)cardinality / (double)getTotalCount(candidate));
 							cand.setParent(candidate);					
 							output.add(cand);
+							cand.flag = new String("InstantiatedAtoms");
 						}
 					}
 				}
@@ -640,7 +695,7 @@ public class MiningAssistant {
                     denominator = (double) computeStdBodySize(var1, var2, rule);
                 } else {
                     denominator = (double) this.kb.countDistinct(rule.getFunctionalVariable(), antecedent);
-                }               
+                }
                 rule.setStdBodySize((long)denominator);
             }catch(UnsupportedOperationException e){
                 
@@ -705,6 +760,19 @@ public class MiningAssistant {
     }
     
     public boolean acceptForOutput(Rule candidate) {
+    	if (candidate.getTriples().size() == 3
+				&& candidate.getTriples().get(2)[0].equals("<John_Hopkins_(lawyer)>")
+				&& candidate.getTriples().get(2)[1].equals("<livesIn>")
+				&& candidate.getTriples().get(2)[2].equals("?c")
+				&& candidate.getTriples().get(1)[0].equals("?a")
+				&& candidate.getTriples().get(1)[1].equals("<isCitizenOf>")
+				&& candidate.getTriples().get(1)[2].equals("?c")
+				&& candidate.getTriples().get(0)[0].equals("?a")
+				&& candidate.getTriples().get(0)[1].equals("<isCitizenOf>")
+				&& candidate.getTriples().get(0)[2].equals("<United_Kingdom>")) {
+			int a = 1;
+			a++;
+		}
         if (!candidate.isClosed())
             return false;
         computeStdConfidence(candidate);
@@ -735,19 +803,9 @@ public class MiningAssistant {
         double threshold = this.getThreshold(in);
         
         Collection<Rule> out = new LinkedHashSet<Rule>();
-        Collection<Rule> danglingAtoms = null;
-        Collection<Rule> instantiatedAtoms = null;
-        Collection<Rule> closingAtoms = null;
-        
-        if (this.getAllowConstants()) {
-        	danglingAtoms = getDanglingAtomsWithInstantiator(in, threshold);
-        	instantiatedAtoms = getInstantiatedAtoms(in, danglingAtoms, threshold);
-        	closingAtoms = getClosingAtomsWithInstantiator(in, threshold);
-        } else {
-        	danglingAtoms = getDanglingAtoms(in, threshold);
-        	instantiatedAtoms = getInstantiatedAtoms(in, danglingAtoms, threshold);
-        	closingAtoms = getClosingAtoms(in, threshold);
-        }
+        Collection<Rule> danglingAtoms = getDanglingAtoms(in, threshold);
+        Collection<Rule> instantiatedAtoms = getInstantiatedAtoms(in, danglingAtoms, threshold);
+        Collection<Rule> closingAtoms = getClosingAtoms(in, threshold);
         
         out.addAll(danglingAtoms);
         out.addAll(instantiatedAtoms);

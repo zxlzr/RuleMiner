@@ -391,8 +391,7 @@ public class KB {
 			switch (numVariables(projectionTriple)) {
 			case 1:
 				instVar = projectionTriple[getFirstVarPos(projectionTriple)];
-				try (Instantiator insty = new Instantiator(otherTriples,
-						instVar)) {
+				try (Instantiator insty = new Instantiator(otherTriples, instVar)) {
 					for (String inst : resultsOneVariable(projectionTriple).keySet()) {
 						MapIncrease(result, selectDistinct(variable, insty.instantiate(inst)));
 					}

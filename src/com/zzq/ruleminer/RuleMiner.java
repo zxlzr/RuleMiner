@@ -147,7 +147,7 @@ public class RuleMiner {
         Collection<Rule> out = new LinkedHashSet<Rule>();
         Collection<Rule> q = null;
         if (miningAssistant.getAllowConstants()) {
-        	q = miningAssistant.getInitialAtomsWithInstantiator(50);
+        	q = miningAssistant.getInitialAtomsWithInstantiator(100);
         } else {
         	q = miningAssistant.getInitialAtoms(100);
         }
@@ -189,11 +189,6 @@ public class RuleMiner {
     	@Override
     	public void run() {
     		while(true) {
-//                System.out.println("mining..." + q.size());
-//                if (q.size() == 747) {
-//                	int a = 1;
-//                	a++;
-//                }
                 Rule r = null;
                 synchronized (q) {
 	                Iterator<Rule> iterator = q.iterator();
@@ -208,7 +203,7 @@ public class RuleMiner {
                 if(miningAssistant.acceptForOutput(r)) {
                     synchronized (out) {
                     	out.add(r);
-	                    System.out.println(r.toString() + "," + r.getStdConfidence() + "," + r.getPcaConfidence() + "," + r.getSupport());
+	                    System.out.println(r.toString() + "," + r.getStdConfidence() + "," + r.getPcaConfidence() + "," + r.getSupport() + "," + r.flag);
 	                    try {
 	                        outputStream.write((r.toString() + "," + r.getStdConfidence() + "," + r.getPcaConfidence() + "," + r.getSupport() + "\n").getBytes());
 	                    } catch (IOException e) {
@@ -239,6 +234,5 @@ public class RuleMiner {
             System.out.println("Mined " + rules.size() + " rules");
             System.out.println("Total Time: " + (t2 - t1) / 1000.0 + " s");
         }
-        System.out.println(MemoryPool.getInstance().count);
     }
 }

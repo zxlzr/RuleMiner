@@ -22,6 +22,8 @@ public class Rule {
     private double stdConfidenceUpperBound = 0.0;
     private double pcaConfidenceUpperBound = 0.0;
     
+    public String flag = "";
+    
 //    private String[] head = new String[3];
 //    private List<String[]> body = new ArrayList<String[]>();
     
