@@ -20,25 +20,29 @@ public class MiningAssistant {
     
     private KB kb = null;
 
-	private int recursivityLimit = 3;
+    private int recursivityLimit = 3;
+    
+    private boolean allowOpenedAtoms = false;
 
-	//private int minSupportThreshold = 0;
+    //private int minSupportThreshold = 0;
 
-	protected HashMap<String, Double> headCardinalities = null;
-	
-	private boolean allowConstants = false;
-	
-	private boolean enforceConstants = false;
-	
-	public boolean countAlwaysOnSubject = false;
-	
-	private long totalSubjectCount = 0;
-	
-	private long totalObjectCount = 0;
-	
-	public enum ConfidenceMetric {StdConfidence, PcaConfidence}
-	
-	private ConfidenceMetric confidenceMetric = ConfidenceMetric.StdConfidence;
+    protected HashMap<String, Double> headCardinalities = null;
+    
+    private boolean allowConstants = false;
+    
+    private boolean enforceConstants = false;
+    
+    public boolean countAlwaysOnSubject = false;
+    
+    private long totalSubjectCount = 0;
+    
+    private long totalObjectCount = 0;
+    
+    public enum ConfidenceMetric {StdConfidence, PcaConfidence}
+    
+    private ConfidenceMetric confidenceMetric = ConfidenceMetric.StdConfidence;
+    
+    private String freeVar = "?x100";
     
     public MiningAssistant(KB kb) {
         this.setKb(kb);
@@ -95,140 +99,183 @@ public class MiningAssistant {
     }
 
     public boolean getAllowConstants() {
-		return allowConstants;
-	}
+        return allowConstants;
+    }
 
-	public void setAllowConstants(boolean allowConstants) {
-		this.allowConstants = allowConstants;
-	}
+    public void setAllowConstants(boolean allowConstants) {
+        this.allowConstants = allowConstants;
+    }
 
-	public Collection<Rule> getInitialAtoms(double minSupportThreshold) {
-    	Collection<Rule> out = new LinkedHashSet<Rule>();
-    	List<String[]> otherProjectionTriples = new ArrayList<String[]>();
-    	String[] projectionTriple = {"?x", "?y", "?z"};
-    	Map<String, Int> relations = this.kb.countProjectionBindings(projectionTriple[1], projectionTriple, otherProjectionTriples);
-    	
-    	Rule query = new Rule();
-    	String[] pattern = query.getTriplePattern();
-    	for (Entry<String, Int> relation : relations.entrySet()) {
-    		double cardinality = relations.get(relation.getKey()).value;
-    		if(cardinality >= minSupportThreshold) {
-    			// TODO
-    			String[] succedent = pattern.clone();
-    			succedent[1] = relation.getKey();
-    			
-    			int countVarPos;
-    			int nVars = KB.numVariables(succedent);
-    			if(nVars == 1){
-    				countVarPos = KB.getFirstVarPos(succedent);
-    			}else{
-    				countVarPos = kb.isFunctional(succedent[1]) ? 0 : 2;
-    			}
-    			
-    			Rule candidate = new Rule(succedent, cardinality);
-				candidate.setFunctionalVariablePosition(countVarPos);
-    			out.add(candidate);
-    		}
-    	}
-    	return out;
+    public boolean getAllowOpenedAtoms() {
+        return allowOpenedAtoms;
+    }
+
+    public void setAllowOpenedAtoms(boolean allowOpenedAtoms) {
+        this.allowOpenedAtoms = allowOpenedAtoms;
+    }
+
+    public String getFreeVar() {
+        return freeVar;
+    }
+
+    public void setFreeVar(String freeVar) {
+        this.freeVar = freeVar;
+    }
+
+    public Collection<Rule> getInitialAtoms(double minSupportThreshold) {
+        Collection<Rule> out = new LinkedHashSet<Rule>();
+        List<String[]> otherProjectionTriples = new ArrayList<String[]>();
+        String[] projectionTriple = {"?x", "?y", "?z"};
+        Map<String, Int> relations = this.kb.countProjectionBindings(projectionTriple[1], projectionTriple, otherProjectionTriples);
+        
+        Rule query = new Rule();
+        String[] pattern = query.getTriplePattern();
+        for (Entry<String, Int> relation : relations.entrySet()) {
+            double cardinality = relations.get(relation.getKey()).value;
+            if(cardinality >= minSupportThreshold) {
+                // TODO
+                String[] succedent = pattern.clone();
+                succedent[1] = relation.getKey();
+                
+                int countVarPos;
+                int nVars = KB.numVariables(succedent);
+                if(nVars == 1){
+                    countVarPos = KB.getFirstVarPos(succedent);
+                }else{
+                    countVarPos = kb.isFunctional(succedent[1]) ? 0 : 2;
+                }
+                
+                Rule candidate = new Rule(succedent, cardinality);
+                candidate.setFunctionalVariablePosition(countVarPos);
+                out.add(candidate);
+            }
+        }
+        out.addAll(getInitialAtomsOpened(out, minSupportThreshold));
+        return out;
     }
     
     public Collection<Rule> getInitialAtomsWithInstantiator(double minSupportThreshold) {
-    	Collection<Rule> out = new LinkedHashSet<Rule>();
-    	List<String[]> otherProjectionTriples = new ArrayList<String[]>();
-    	String[] projectionTriple = {"?x", "?y", "?z"};
-    	Map<String, Int> relations = this.kb.countProjectionBindings(projectionTriple[1], projectionTriple, otherProjectionTriples);
-    	
-    	Rule query = new Rule();
-    	String[] pattern = query.getTriplePattern();
-    	for (Entry<String, Int> relation : relations.entrySet()) {
-    		double cardinality = relations.get(relation.getKey()).value;
-    		if(cardinality >= minSupportThreshold) {
-    			String[] succedent = pattern.clone();
-    			succedent[1] = relation.getKey();
-    			
-    			int countVarPos;
-    			int nVars = KB.numVariables(succedent);
-    			if(nVars == 1){
-    				countVarPos = KB.getFirstVarPos(succedent);
-    			}else{
-    				countVarPos = kb.isFunctional(succedent[1]) ? 0 : 2;
-    			}
-    			
-    			Rule candidate = new Rule(succedent, cardinality);
-				candidate.setFunctionalVariablePosition(countVarPos);
-    			out.add(candidate);
-    			
-    			Map<String, Int> objects = this.kb.countProjectionBindings(succedent[2], succedent, otherProjectionTriples);
-    			for (Entry<String, Int> object : objects.entrySet()) {
-    				if (object.getValue().value >= minSupportThreshold) {
-    					succedent = succedent.clone();
-    	    			succedent[2] = object.getKey();
-    	    			nVars = KB.numVariables(succedent);
-    	    			if(nVars == 1){
-    	    				countVarPos = KB.getFirstVarPos(succedent);
-    	    			}else{
-    	    				countVarPos = kb.isFunctional(succedent[1]) ? 0 : 2;
-    	    			}
-    	    			
-    	    			candidate = new Rule(succedent, cardinality);
-    					candidate.setFunctionalVariablePosition(countVarPos);
-    	    			out.add(candidate);
-    				}
-    			}
-    			
-    			Map<String, Int> subjects = this.kb.countProjectionBindings(succedent[0], succedent, otherProjectionTriples);
-    			for (Entry<String, Int> subject : subjects.entrySet()) {
-    				if (subject.getValue().value >= minSupportThreshold) {
-    					succedent = succedent.clone();
-    	    			succedent[0] = subject.getKey();
-    	    			nVars = KB.numVariables(succedent);
-    	    			if(nVars == 1){
-    	    				countVarPos = KB.getFirstVarPos(succedent);
-    	    			}else{
-    	    				countVarPos = kb.isFunctional(succedent[1]) ? 0 : 2;
-    	    			}
-    	    			
-    	    			candidate = new Rule(succedent, cardinality);
-    					candidate.setFunctionalVariablePosition(countVarPos);
-    	    			out.add(candidate);
-    				}
-    			}
-    		}
-    	}
-    	return out;
+        Collection<Rule> out = new LinkedHashSet<Rule>();
+        List<String[]> otherProjectionTriples = new ArrayList<String[]>();
+        String[] projectionTriple = {"?x", "?y", "?z"};
+        Map<String, Int> relations = this.kb.countProjectionBindings(projectionTriple[1], projectionTriple, otherProjectionTriples);
+        
+        Rule query = new Rule();
+        String[] pattern = query.getTriplePattern();
+        for (Entry<String, Int> relation : relations.entrySet()) {
+            double cardinality = relations.get(relation.getKey()).value;
+            if(cardinality >= minSupportThreshold) {
+                String[] succedent = pattern.clone();
+                succedent[1] = relation.getKey();
+                
+                int countVarPos;
+                int nVars = KB.numVariables(succedent);
+                if(nVars == 1){
+                    countVarPos = KB.getFirstVarPos(succedent);
+                }else{
+                    countVarPos = kb.isFunctional(succedent[1]) ? 0 : 2;
+                }
+                
+                Rule candidate = new Rule(succedent, cardinality);
+                candidate.setFunctionalVariablePosition(countVarPos);
+                out.add(candidate);
+                
+                Map<String, Int> objects = this.kb.countProjectionBindings(succedent[2], succedent, otherProjectionTriples);
+                for (Entry<String, Int> object : objects.entrySet()) {
+                    if (object.getValue().value >= minSupportThreshold) {
+                        succedent = succedent.clone();
+                        succedent[2] = object.getKey();
+                        nVars = KB.numVariables(succedent);
+                        if(nVars == 1){
+                            countVarPos = KB.getFirstVarPos(succedent);
+                        }else{
+                            countVarPos = kb.isFunctional(succedent[1]) ? 0 : 2;
+                        }
+                        
+                        candidate = new Rule(succedent, cardinality);
+                        candidate.setFunctionalVariablePosition(countVarPos);
+                        out.add(candidate);
+                    }
+                }
+                
+                Map<String, Int> subjects = this.kb.countProjectionBindings(succedent[0], succedent, otherProjectionTriples);
+                for (Entry<String, Int> subject : subjects.entrySet()) {
+                    if (subject.getValue().value >= minSupportThreshold) {
+                        succedent = succedent.clone();
+                        succedent[0] = subject.getKey();
+                        nVars = KB.numVariables(succedent);
+                        if(nVars == 1){
+                            countVarPos = KB.getFirstVarPos(succedent);
+                        }else{
+                            countVarPos = kb.isFunctional(succedent[1]) ? 0 : 2;
+                        }
+                        
+                        candidate = new Rule(succedent, cardinality);
+                        candidate.setFunctionalVariablePosition(countVarPos);
+                        out.add(candidate);
+                    }
+                }
+            }
+        }
+        out.addAll(getInitialAtomsOpened(out, minSupportThreshold));
+        return out;
+    }
+    
+    public Collection<Rule> getInitialAtomsOpened(Collection<Rule> in, double minSupportThreshold) {
+        Collection<Rule> out = new LinkedHashSet<Rule>();
+        if (!this.getAllowOpenedAtoms()) {
+            return out;
+        }
+        for (Rule rule : in) {
+            if (rule.getTriples().size() != 1) {
+                continue;
+            }
+            if (KB.numVariables(rule.getHead()) != 2) {
+                continue;
+            }
+            for (int i=0; i<=2; i+=2) {
+                Rule cand = new Rule(rule, rule.getSupport());
+                cand.setOpened(true);
+//                cand.getHead()[i] = new String(getFreeVar());
+                out.add(cand);
+            }
+        }
+        return out;
     }
 
     public Collection<Rule> getDanglingAtoms(Rule rule, double minCardinality) {
-    	Collection<Rule> output = new ArrayList<Rule>();
-    	if(rule.getTriples().isEmpty())
-    		return null;
-    	if(rule.getRealLength() >= this.maxLen)
-    		return output;
-    	if(rule.getRealLength() == this.maxLen - 1) {
-    		if(!rule.getOpenVars().isEmpty() && !this.getAllowConstants() && !this.enforceConstants)
-    			return output;
-    	}
-    	
-    	List<String> joinVars = null;
-    	List<String> openVars = rule.getOpenVars();
-    	
+        Collection<Rule> output = new ArrayList<Rule>();
+        if (rule.getOpened()) {
+            return output;
+        }
+        if(rule.getTriples().isEmpty())
+            return null;
+        if(rule.getRealLength() >= this.maxLen)
+            return output;
+        if(rule.getRealLength() == this.maxLen - 1) {
+            if(!rule.getOpenVars().isEmpty() && !this.getAllowConstants() && !this.enforceConstants)
+                return output;
+        }
+        
+        List<String> joinVars = null;
+        List<String> openVars = rule.getOpenVars();
+        
         if(rule.isClosed()) {              
             joinVars = rule.getAllVars();
         } else {
             joinVars = openVars;
         }
         
-    	int nPatterns = rule.getTriples().size();
-    	
-    	String[] edge = rule.getTriplePattern();
+        int nPatterns = rule.getTriples().size();
+        
+        String[] edge = rule.getTriplePattern();
 
-    	for(int joinPos = 0; joinPos <= 2; joinPos += 2) {
-    	    for (String joinVar : joinVars) {
-        	    String[] newTriple = edge.clone();
-        	    newTriple[joinPos] = joinVar;
-    	       
-    	        rule.getTriples().add(newTriple);
+        for(int joinPos = 0; joinPos <= 2; joinPos += 2) {
+            for (String joinVar : joinVars) {
+                String[] newTriple = edge.clone();
+                newTriple[joinPos] = joinVar;
+               
+                rule.getTriples().add(newTriple);
 
                 Map<String, Int> promisingRelations = this.kb.countProjectionBindings(newTriple[1], rule.getHead(), rule.getBody());
                 rule.getTriples().remove(nPatterns);
@@ -255,41 +302,47 @@ public class MiningAssistant {
                        output.add(candidate);
                     }
                 }
-    	    }
-    	}
-    	return output;
+            }
+        }
+        if (this.getAllowOpenedAtoms() && rule.getOpened()) {
+            
+        }
+        return output;
     }
     
     public Collection<Rule> getDanglingAtomsWithInstantiator(Rule rule, double minCardinality) {
-    	Collection<Rule> output = new ArrayList<Rule>();
-    	if(rule.getTriples().isEmpty())
-    		return null;
-    	if(rule.getRealLength() >= this.maxLen)
-    		return output;
-    	if(rule.getRealLength() == this.maxLen - 1) {
-    		if(!rule.getOpenVars().isEmpty() && !this.getAllowConstants() && !this.enforceConstants)
-    			return output;
-    	}
-    	
-    	List<String> joinVars = null;
-    	List<String> openVars = rule.getOpenVars();
-    	
-        if(rule.isClosed()) {              
+        Collection<Rule> output = new ArrayList<Rule>();
+        if (rule.getOpened()) {
+            return output;
+        }
+        if (rule.getTriples().isEmpty())
+            return null;
+        if (rule.getRealLength() >= this.maxLen)
+            return output;
+        if (rule.getRealLength() == this.maxLen - 1) {
+            if(!rule.getOpenVars().isEmpty() && !this.getAllowConstants() && !this.enforceConstants)
+                return output;
+        }
+        
+        List<String> joinVars = null;
+        List<String> openVars = rule.getOpenVars();
+        
+        if (rule.isClosed()) {              
             joinVars = rule.getAllVars();
         } else {
             joinVars = openVars;
         }
         
-    	int nPatterns = rule.getTriples().size();
-    	
-    	String[] edge = rule.getTriplePattern();
+        int nPatterns = rule.getTriples().size();
+        
+        String[] edge = rule.getTriplePattern();
 
-    	for(int joinPos = 0; joinPos <= 2; joinPos += 2) {
-    	    for (String joinVar : joinVars) {
-        	    String[] newTriple = edge.clone();
-        	    newTriple[joinPos] = joinVar;
-    	       
-    	        rule.getTriples().add(newTriple);
+        for (int joinPos = 0; joinPos <= 2; joinPos += 2) {
+            for (String joinVar : joinVars) {
+                String[] newTriple = edge.clone();
+                newTriple[joinPos] = joinVar;
+               
+                rule.getTriples().add(newTriple);
 
                 Map<String, Int> promisingRelations = this.kb.countProjectionBindings(newTriple[1], rule.getHead(), rule.getBody());
                 rule.getTriples().remove(nPatterns);
@@ -310,376 +363,366 @@ public class MiningAssistant {
                     Rule candidate = new Rule(rule, newTriple, cardinality);
 
                     if (!candidate.isRedundantRecursive()) {
-                    	candidate.setHeadCoverage(candidate.getSupport() / this.headCardinalities.get(candidate.getHeadRelation()));
-                    	candidate.setSupportRatio(candidate.getSupport() / this.kb.getSize());
-                    	candidate.setParent(rule);
-                    	output.add(candidate);
-   	    				candidate.flag = "DanglingAtomsWithInstantiator";
+                        candidate.setHeadCoverage(candidate.getSupport() / this.headCardinalities.get(candidate.getHeadRelation()));
+                        candidate.setSupportRatio(candidate.getSupport() / this.kb.getSize());
+                        candidate.setParent(rule);
+                        output.add(candidate);
+                           candidate.flag = "DanglingAtomsWithInstantiator";
                     }
                 }
-    	    }
-    	}
-    	return output;
+            }
+        }
+        return output;
     }
     
     public Collection<Rule> getClosingAtoms(Rule rule, double minCardinality) {
-    	Collection<Rule> output = new ArrayList<Rule>();
-    	int nPatterns = rule.getTriples().size();
-    	
-    	if (nPatterns == 0)
-    		return output;
-    	
-    	if (nPatterns >= this.maxLen)
-    		return output;
-    	
-    	List<String> openVars = rule.getOpenVars();
-    	List<String> allVars = rule.getAllVars();
-    	List<String> srcVars;
-    	List<String> destVars;
-    	
-    	if(allVars.size() < 2)
-    		return output;
-    	
-    	if(rule.isClosed()) {
-    		srcVars = allVars;
-    		destVars = allVars;
-    	} else {
-    		srcVars = openVars;
-    		if (openVars.size() > 2 && rule.getTriples().size() >= this.getMaxLen() - 1) {
-    			return output;
-    		} else if (openVars.size() == 2) {
-    			destVars = openVars;
-    		} else {
-    			destVars = allVars;
-    		}
-    	}
-    	
-    	int []varSetups = new int[] {0, 2, 2, 0};
-    	String[] newTriple = rule.getTriplePattern();
-		String relationVariable = newTriple[1];
-    	
-    	for (int i=0; i<2; i++) {
-    		int joinPos = varSetups[i * 2];
-    		int closePos = varSetups[i * 2 + 1];
-    		String joinVar = newTriple[joinPos];
-    		String closeVar = newTriple[closePos];
-    		
-    		for (String srcVar : srcVars) {
-    			newTriple[joinPos] = srcVar;
-    			for (String destVar : destVars) {
-    				if (!srcVar.equals(destVar)) {
-    					newTriple[closePos] = destVar;
-    					rule.add(newTriple);
-    					Map<String, Int> promisingRelations = this.kb.countProjectionBindings(newTriple[1], rule.getHead(), rule.getBody());
-    					rule.getTriples().remove(nPatterns);
+        Collection<Rule> output = new ArrayList<Rule>();
+        if (rule.getOpened()) {
+            return output;
+        }
+        int nPatterns = rule.getTriples().size();
+        
+        if (nPatterns == 0)
+            return output;
+        
+        if (nPatterns >= this.maxLen)
+            return output;
+        
+        List<String> openVars = rule.getOpenVars();
+        List<String> allVars = rule.getAllVars();
+        List<String> srcVars;
+        List<String> destVars;
+        
+        if(allVars.size() < 2)
+            return output;
+        
+        if(rule.isClosed()) {
+            srcVars = allVars;
+            destVars = allVars;
+        } else {
+            srcVars = openVars;
+            if (openVars.size() > 2 && rule.getTriples().size() >= this.getMaxLen() - 1) {
+                return output;
+            } else if (openVars.size() == 2) {
+                destVars = openVars;
+            } else {
+                destVars = allVars;
+            }
+        }
+        
+        int []varSetups = new int[] {0, 2, 2, 0};
+        String[] newTriple = rule.getTriplePattern();
+        String relationVariable = newTriple[1];
+        
+        for (int i=0; i<2; i++) {
+            int joinPos = varSetups[i * 2];
+            int closePos = varSetups[i * 2 + 1];
+            String joinVar = newTriple[joinPos];
+            String closeVar = newTriple[closePos];
+            
+            for (String srcVar : srcVars) {
+                newTriple[joinPos] = srcVar;
+                for (String destVar : destVars) {
+                    if (!srcVar.equals(destVar)) {
+                        newTriple[closePos] = destVar;
+                        rule.add(newTriple);
+                        Map<String, Int> promisingRelations = this.kb.countProjectionBindings(newTriple[1], rule.getHead(), rule.getBody());
+                        rule.getTriples().remove(nPatterns);
 
-    					List<String> listOfPromisingRelations = new ArrayList<String>();
-    					listOfPromisingRelations.addAll(promisingRelations.keySet());
-    					//= promisingRelations.decreasingKeys();
-						for(String relation: listOfPromisingRelations){
-							long cardinality = promisingRelations.get(relation).value;
-							
-							if (cardinality < minCardinality) {
-								continue;
-							}
-							
-							// Language bias test
-							if (rule.cardinalityForRelation(relation) >= this.recursivityLimit) {
-								continue;
-							}
+                        List<String> listOfPromisingRelations = new ArrayList<String>();
+                        listOfPromisingRelations.addAll(promisingRelations.keySet());
+                        //= promisingRelations.decreasingKeys();
+                        for(String relation: listOfPromisingRelations){
+                            long cardinality = promisingRelations.get(relation).value;
+                            
+                            if (cardinality < minCardinality) {
+                                continue;
+                            }
+                            
+                            // Language bias test
+                            if (rule.cardinalityForRelation(relation) >= this.recursivityLimit) {
+                                continue;
+                            }
 
-//							if (this.bodyExcludedRelations != null 
-//									&& this.bodyExcludedRelations.contains(relation)) {
-//								continue;
-//							}
-//							
-//							if (this.bodyTargetRelations != null 
-//									&& !this.bodyTargetRelations.contains(relation)) {
-//								continue;
-//							}
-							
-							//Here we still have to make a redundancy check							
-							newTriple[1] = relation;
-							Rule candidate = new Rule(rule, cardinality);
-							candidate.add(newTriple);
+//                            if (this.bodyExcludedRelations != null 
+//                                    && this.bodyExcludedRelations.contains(relation)) {
+//                                continue;
+//                            }
+//                            
+//                            if (this.bodyTargetRelations != null 
+//                                    && !this.bodyTargetRelations.contains(relation)) {
+//                                continue;
+//                            }
+                            
+                            //Here we still have to make a redundancy check                            
+                            newTriple[1] = relation;
+                            Rule candidate = new Rule(rule, cardinality);
+                            candidate.add(newTriple);
 
-							if(!candidate.isRedundantRecursive()){
-								candidate.setHeadCoverage((double)cardinality / (double)this.headCardinalities.get(candidate.getHeadRelation()));
-								candidate.setSupportRatio((double)cardinality / (double)this.kb.getSize());
-								candidate.setParent(rule);
-								output.add(candidate);
-								candidate.flag = new String("ClosingAtoms");
-							}
-						}
-    				}
-					newTriple[1] = relationVariable;
-    			}
-    			newTriple[closePos] = closeVar;
-    			newTriple[joinPos] = joinVar;
-    		}
-    	}
-    	return output;
+                            if(!candidate.isRedundantRecursive()){
+                                candidate.setHeadCoverage((double)cardinality / (double)this.headCardinalities.get(candidate.getHeadRelation()));
+                                candidate.setSupportRatio((double)cardinality / (double)this.kb.getSize());
+                                candidate.setParent(rule);
+                                output.add(candidate);
+                                candidate.flag = new String("ClosingAtoms");
+                            }
+                        }
+                    }
+                    newTriple[1] = relationVariable;
+                }
+                newTriple[closePos] = closeVar;
+                newTriple[joinPos] = joinVar;
+            }
+        }
+        return output;
     }
 
     public Collection<Rule> getClosingAtomsWithInstantiator(Rule rule, double minCardinality) {
-    	Collection<Rule> output = new ArrayList<Rule>();
-    	int nPatterns = rule.getTriples().size();
-    	
-    	if (nPatterns == 0)
-    		return output;
-    	
-    	if (nPatterns >= this.maxLen)
-    		return output;
-    	
-    	List<String> openVars = rule.getOpenVars();
-    	List<String> allVars = rule.getAllVars();
-    	List<String> srcVars;
-    	List<String> destVars;
-    	
-    	if(rule.isClosed()) {
-    		srcVars = allVars;
-    		destVars = allVars;
-    	} else {
-    		srcVars = openVars;
-    		if (openVars.size() > 2 && rule.getTriples().size() >= this.getMaxLen() - 1) {
-    			return output;
-    		} else if (openVars.size() == 2) {
-    			destVars = openVars;
-    		} else {
-    			destVars = allVars;
-    		}
-    	}
-    	
-    	int []varSetups = new int[] {0, 2, 2, 0};
-    	String[] newTriple = rule.getTriplePattern();
-		String relationVariable = newTriple[1];
-		
-		if (allVars.size() == 1) {
-			for (int i=0; i<2; i++) {
-	    		int joinPos = varSetups[i * 2];
-	    		int closePos = varSetups[i * 2 + 1];
-	    		String tmp = newTriple[joinPos];
-				newTriple[joinPos] = srcVars.get(0);
-				rule.add(newTriple);
-				Map<String, Int> promisingRelations = this.kb.countProjectionBindings(newTriple[1], rule.getHead(), rule.getBody());
-				Map<String, Int> promisingObjects = null;
-				for (Entry<String, Int> entry : promisingRelations.entrySet()) {
-					long cardinality = entry.getValue().value;
-					if (cardinality < minCardinality) {
-						continue;
-					}
-					if (rule.cardinalityForRelation(entry.getKey()) >= this.recursivityLimit) {
-						continue;
-					}
-					newTriple[1] = entry.getKey();
-					rule.getTriples().get(rule.getTriples().size() - 1)[1] = new String(newTriple[1]);
-					if (rule.getTriples().size() == 3
-							&& rule.getTriples().get(2)[1].equals("<livesIn>")
-							&& rule.getTriples().get(2)[2].equals("?c")
-							&& rule.getTriples().get(1)[0].equals("?a")
-							&& rule.getTriples().get(1)[1].equals("<isCitizenOf>")
-							&& rule.getTriples().get(1)[2].equals("?c")
-							&& rule.getTriples().get(0)[0].equals("?a")
-							&& rule.getTriples().get(0)[1].equals("<isCitizenOf>")
-							&& rule.getTriples().get(0)[2].equals("<United_Kingdom>")) {
-						int a = 1;
-						a++;
-					}
-					promisingObjects = this.kb.countProjectionBindings(newTriple[closePos], rule.getHead(), rule.getBody());
-					for (Entry<String, Int> objects : promisingObjects.entrySet()) {
-						cardinality = objects.getValue().value;
-						if (cardinality < minCardinality) {
-							continue;
-						}
-						Rule candidate = new Rule(rule, cardinality);
-						candidate.getTriples().get(candidate.getTriples().size() - 1)[closePos] = new String(objects.getKey());
-						if(candidate.isRedundantRecursive()) {
-							continue;
-						}
-						candidate.setParent(rule);
-						candidate.setHeadCoverage((double)cardinality / (double)this.headCardinalities.get(candidate.getHeadRelation()));
-						candidate.setSupportRatio((double)cardinality / (double)this.kb.getSize());
-						output.add(candidate);
-   	    				candidate.flag = new String("ClosingAtomsWithInstantiator");
-					}
-				}
-				newTriple[joinPos] = tmp;
-				rule.getTriples().remove(nPatterns);
-			}
-		}
-    	
-    	for (int i=0; i<2 && allVars.size() > 1; i++) {
-    		int joinPos = varSetups[i * 2];
-    		int closePos = varSetups[i * 2 + 1];
-    		String joinVar = newTriple[joinPos];
-    		String closeVar = newTriple[closePos];
-    		
-    		for (String srcVar : srcVars) {
-    			newTriple[joinPos] = srcVar;
-    			for (String destVar : destVars) {
-    				if (!srcVar.equals(destVar)) {
-    					newTriple[closePos] = destVar;
-    					rule.add(newTriple);
-    					Map<String, Int> promisingRelations = this.kb.countProjectionBindings(newTriple[1], rule.getHead(), rule.getBody());
-    					rule.getTriples().remove(nPatterns);
+        Collection<Rule> output = new ArrayList<Rule>();
+        if (rule.getOpened()) {
+            return output;
+        }
+        int nPatterns = rule.getTriples().size();
+        
+        if (nPatterns == 0)
+            return output;
+        
+        if (nPatterns >= this.maxLen)
+            return output;
+        
+        List<String> openVars = rule.getOpenVars();
+        List<String> allVars = rule.getAllVars();
+        List<String> srcVars;
+        List<String> destVars;
+        
+        if(rule.isClosed()) {
+            srcVars = allVars;
+            destVars = allVars;
+        } else {
+            srcVars = openVars;
+            if (openVars.size() > 2 && rule.getTriples().size() >= this.getMaxLen() - 1) {
+                return output;
+            } else if (openVars.size() == 2) {
+                destVars = openVars;
+            } else {
+                destVars = allVars;
+            }
+        }
+        
+        int []varSetups = new int[] {0, 2, 2, 0};
+        String[] newTriple = rule.getTriplePattern();
+        String relationVariable = newTriple[1];
+        
+        if (allVars.size() == 1) {
+            for (int i=0; i<2; i++) {
+                int joinPos = varSetups[i * 2];
+                int closePos = varSetups[i * 2 + 1];
+                String tmp = newTriple[joinPos];
+                newTriple[joinPos] = srcVars.get(0);
+                rule.add(newTriple);
+                Map<String, Int> promisingRelations = this.kb.countProjectionBindings(newTriple[1], rule.getHead(), rule.getBody());
+                Map<String, Int> promisingObjects = null;
+                for (Entry<String, Int> entry : promisingRelations.entrySet()) {
+                    long cardinality = entry.getValue().value;
+                    if (cardinality < minCardinality) {
+                        continue;
+                    }
+                    if (rule.cardinalityForRelation(entry.getKey()) >= this.recursivityLimit) {
+                        continue;
+                    }
+                    newTriple[1] = entry.getKey();
+                    rule.getTriples().get(rule.getTriples().size() - 1)[1] = new String(newTriple[1]);
+                    
+                    promisingObjects = this.kb.countProjectionBindings(newTriple[closePos], rule.getHead(), rule.getBody());
+                    for (Entry<String, Int> objects : promisingObjects.entrySet()) {
+                        cardinality = objects.getValue().value;
+                        if (cardinality < minCardinality) {
+                            continue;
+                        }
+                        Rule candidate = new Rule(rule, cardinality);
+                        candidate.getTriples().get(candidate.getTriples().size() - 1)[closePos] = new String(objects.getKey());
+                        if(candidate.isRedundantRecursive()) {
+                            continue;
+                        }
+                        candidate.setParent(rule);
+                        candidate.setHeadCoverage((double)cardinality / (double)this.headCardinalities.get(candidate.getHeadRelation()));
+                        candidate.setSupportRatio((double)cardinality / (double)this.kb.getSize());
+                        output.add(candidate);
+                           candidate.flag = new String("ClosingAtomsWithInstantiator");
+                    }
+                }
+                newTriple[joinPos] = tmp;
+                rule.getTriples().remove(nPatterns);
+            }
+        }
+        
+        for (int i=0; i<2 && allVars.size() > 1; i++) {
+            int joinPos = varSetups[i * 2];
+            int closePos = varSetups[i * 2 + 1];
+            String joinVar = newTriple[joinPos];
+            String closeVar = newTriple[closePos];
+            
+            for (String srcVar : srcVars) {
+                newTriple[joinPos] = srcVar;
+                for (String destVar : destVars) {
+                    if (!srcVar.equals(destVar)) {
+                        newTriple[closePos] = destVar;
+                        rule.add(newTriple);
+                        Map<String, Int> promisingRelations = this.kb.countProjectionBindings(newTriple[1], rule.getHead(), rule.getBody());
+                        rule.getTriples().remove(nPatterns);
 
-    					List<String> listOfPromisingRelations = new ArrayList<String>();
-    					listOfPromisingRelations.addAll(promisingRelations.keySet());
-    					
-    					//= promisingRelations.decreasingKeys();
-						for(String relation: listOfPromisingRelations){
-							long cardinality = promisingRelations.get(relation).value;
-							
-							if (cardinality < minCardinality) {
-								continue;
-							}
-							
-							// Language bias test
-							if (rule.cardinalityForRelation(relation) >= this.recursivityLimit) {
-								continue;
-							}
-							
-							//Here we still have to make a redundancy check							
-							newTriple[1] = relation;
-							Rule candidate = new Rule(rule, cardinality);
-							candidate.add(newTriple);
+                        List<String> listOfPromisingRelations = new ArrayList<String>();
+                        listOfPromisingRelations.addAll(promisingRelations.keySet());
+                        
+                        //= promisingRelations.decreasingKeys();
+                        for(String relation: listOfPromisingRelations){
+                            long cardinality = promisingRelations.get(relation).value;
+                            
+                            if (cardinality < minCardinality) {
+                                continue;
+                            }
+                            
+                            // Language bias test
+                            if (rule.cardinalityForRelation(relation) >= this.recursivityLimit) {
+                                continue;
+                            }
+                            
+                            //Here we still have to make a redundancy check                            
+                            newTriple[1] = relation;
+                            Rule candidate = new Rule(rule, cardinality);
+                            candidate.add(newTriple);
 
-							if(!candidate.isRedundantRecursive()){
-								candidate.setHeadCoverage((double)cardinality / (double)this.headCardinalities.get(candidate.getHeadRelation()));
-								candidate.setSupportRatio((double)cardinality / (double)this.kb.getSize());
-								candidate.setParent(rule);
-								output.add(candidate);
-		   	    				candidate.flag = new String("ClosingAtomsWithInstantiator2");
-								if (candidate.getTriples().size() == 3
-										&& candidate.getTriples().get(2)[1].equals("<livesIn>")
-										&& candidate.getTriples().get(2)[2].equals("?c")
-										&& candidate.getTriples().get(1)[0].equals("?a")
-										&& candidate.getTriples().get(1)[1].equals("<isCitizenOf>")
-										&& candidate.getTriples().get(1)[2].equals("?c")
-										&& candidate.getTriples().get(0)[0].equals("?a")
-										&& candidate.getTriples().get(0)[1].equals("<isCitizenOf>")
-										&& candidate.getTriples().get(0)[2].equals("<United_Kingdom>")) {
-									int a = 1;
-									a++;
-								}
-								Map<String, Int> promisingObjects = this.kb.countProjectionBindings(newTriple[2], candidate.getHead(), candidate.getBody());
-								for (Entry<String, Int> entry : promisingObjects.entrySet()) {
-									cardinality = entry.getValue().value;
-									if (entry.getValue().value < minCardinality) {
-										continue;
-									}
-									newTriple[2] = entry.getKey();
-									Rule candObj = new Rule(rule, cardinality);
-									candObj.add(newTriple);
-									candObj.setHeadCoverage((double)cardinality / (double)this.headCardinalities.get(candidate.getHeadRelation()));
-									candObj.setSupportRatio((double)cardinality / (double)this.kb.getSize());
-									candObj.setParent(rule);
-									output.add(candObj);
-			   	    				candidate.flag = new String("ClosingAtomsWithInstantiator3");
-								}
-							}
-						}
-    				}
-					newTriple[1] = relationVariable;
-    			}
-    			newTriple[closePos] = closeVar;
-    			newTriple[joinPos] = joinVar;
-    		}
-    	}
-    	return output;
+                            if(!candidate.isRedundantRecursive()){
+                                candidate.setHeadCoverage((double)cardinality / (double)this.headCardinalities.get(candidate.getHeadRelation()));
+                                candidate.setSupportRatio((double)cardinality / (double)this.kb.getSize());
+                                candidate.setParent(rule);
+                                output.add(candidate);
+                                   candidate.flag = new String("ClosingAtomsWithInstantiator2");
+                                
+                                Map<String, Int> promisingObjects = this.kb.countProjectionBindings(newTriple[2], candidate.getHead(), candidate.getBody());
+                                for (Entry<String, Int> entry : promisingObjects.entrySet()) {
+                                    cardinality = entry.getValue().value;
+                                    if (entry.getValue().value < minCardinality) {
+                                        continue;
+                                    }
+                                    newTriple[2] = entry.getKey();
+                                    Rule candObj = new Rule(rule, cardinality);
+                                    candObj.add(newTriple);
+                                    candObj.setHeadCoverage((double)cardinality / (double)this.headCardinalities.get(candidate.getHeadRelation()));
+                                    candObj.setSupportRatio((double)cardinality / (double)this.kb.getSize());
+                                    candObj.setParent(rule);
+                                    output.add(candObj);
+                                       candidate.flag = new String("ClosingAtomsWithInstantiator3");
+                                }
+                            }
+                        }
+                    }
+                    newTriple[1] = relationVariable;
+                }
+                newTriple[closePos] = closeVar;
+                newTriple[joinPos] = joinVar;
+            }
+        }
+        return output;
     }
     
     public Collection<Rule> getInstantiatedAtoms(Rule rule, Collection<Rule> danglingEdges, double minCardinality) {
-    	Collection<Rule> output = new ArrayList<Rule>();
-    	if (!canAddInstantiatedAtoms()) {
-    		return output;
-    	}
-    	List<String> queryFreshVariables = rule.getOpenVars();
-    	if (rule.getRealLength() < this.maxLen - 1 || queryFreshVariables.size() < 2) {
-    		for (Rule candidate : danglingEdges) {
-    			int lastTripplePatternIndex = candidate.getTriples().size() - 1;
-    			String []lastTriplePattern = candidate.getTriples().get(lastTripplePatternIndex);
-    			List<String> candidateFreshVariables = candidate.getOpenVars();
-    			int danglingPosition = 0;
-				if (candidateFreshVariables.contains(lastTriplePattern[0])) {
-					danglingPosition = 0;
-				} else if (candidateFreshVariables.contains(lastTriplePattern[2])) {
-					danglingPosition = 2;
-				}
-				// getInstantiatedAtoms(candidate, candidate, lastTriplePatternIndex, danglingPosition, minSupportThreshold, output);
-				String []danglingEdge = candidate.getTriples().get(lastTripplePatternIndex);
-				// TODO The next line may have some problems...
-				if (candidate.getTriples().size() == 3
-						&& candidate.getTriples().get(2)[1].equals("<livesIn>")
-						&& candidate.getTriples().get(2)[2].equals("?c")
-						&& candidate.getTriples().get(1)[0].equals("?a")
-						&& candidate.getTriples().get(1)[1].equals("<isCitizenOf>")
-						&& candidate.getTriples().get(1)[2].equals("?c")
-						&& candidate.getTriples().get(0)[0].equals("?a")
-						&& candidate.getTriples().get(0)[1].equals("<isCitizenOf>")
-						&& candidate.getTriples().get(0)[2].equals("<United_Kingdom>")) {
-					int a = 1;
-					a++;
-				}
-				Map<String, Int> constants = this.kb.countProjectionBindings(danglingEdge[danglingPosition], candidate.getHead(), candidate.getBody());
-				for (Entry<String, Int> constant : constants.entrySet()) {
-					long cardinality = constant.getValue().value;
-					if (cardinality >= minCardinality) {
-						String[] lastPatternCopy = candidate.getTriples().get(lastTripplePatternIndex).clone();
-						lastPatternCopy[danglingPosition] = constant.getKey();
-						Rule cand = candidate.instantiateConstant(danglingPosition, constant.getKey(), cardinality);
-						if (cand.getRedundantAtoms().isEmpty()) {
-							cand.setHeadCoverage((double)cardinality / headCardinalities.get(candidate.getHeadRelation()));
-							cand.setSupportRatio((double)cardinality / (double)getTotalCount(candidate));
-							cand.setParent(candidate);					
-							output.add(cand);
-							cand.flag = new String("InstantiatedAtoms");
-						}
-					}
-				}
-    		}
-    	}
-    	return output;
+        Collection<Rule> output = new ArrayList<Rule>();
+        if (!canAddInstantiatedAtoms()) {
+            return output;
+        }
+        List<String> queryFreshVariables = rule.getOpenVars();
+        if (rule.getRealLength() < this.maxLen - 1 || queryFreshVariables.size() < 2) {
+            for (Rule candidate : danglingEdges) {
+                int lastTripplePatternIndex = candidate.getTriples().size() - 1;
+                String []lastTriplePattern = candidate.getTriples().get(lastTripplePatternIndex);
+                List<String> candidateFreshVariables = candidate.getOpenVars();
+                int danglingPosition = 0;
+                if (candidateFreshVariables.contains(lastTriplePattern[0])) {
+                    danglingPosition = 0;
+                } else if (candidateFreshVariables.contains(lastTriplePattern[2])) {
+                    danglingPosition = 2;
+                }
+                // getInstantiatedAtoms(candidate, candidate, lastTriplePatternIndex, danglingPosition, minSupportThreshold, output);
+                String []danglingEdge = candidate.getTriples().get(lastTripplePatternIndex);
+                // TODO The next line may have some problems...
+                
+                Map<String, Int> constants = this.kb.countProjectionBindings(danglingEdge[danglingPosition], candidate.getHead(), candidate.getBody());
+                for (Entry<String, Int> constant : constants.entrySet()) {
+                    long cardinality = constant.getValue().value;
+                    if (cardinality >= minCardinality) {
+                        String[] lastPatternCopy = candidate.getTriples().get(lastTripplePatternIndex).clone();
+                        lastPatternCopy[danglingPosition] = constant.getKey();
+                        Rule cand = candidate.instantiateConstant(danglingPosition, constant.getKey(), cardinality);
+                        if (cand.getRedundantAtoms().isEmpty()) {
+                            cand.setHeadCoverage((double)cardinality / headCardinalities.get(candidate.getHeadRelation()));
+                            cand.setSupportRatio((double)cardinality / (double)getTotalCount(candidate));
+                            cand.setParent(candidate);                    
+                            output.add(cand);
+                            cand.flag = new String("InstantiatedAtoms");
+                        }
+                    }
+                }
+            }
+        }
+        return output;
     }
     
     public Collection<Rule> getOpenedAtoms(Rule in, double minCardinality) {
-    	Collection<Rule> output = new ArrayList<Rule>();
-    	if (!in.getOpened()) {
-    		return output;
-    	}
-    	String[] newTriple = in.getTriplePattern();
-    	for (int openPos=0; openPos<=2; openPos += 2) {
-    		int fixedPos = 2 - openPos;
-    		int nPatterns = in.getTriples().size();
-    		for (String fixedVar : in.getFixedVars()) {
-    			String tmp = newTriple[openPos];
-    			newTriple[openPos] = fixedVar;
-        		in.add(newTriple);
-        		in.getTriples().remove(nPatterns);
-        		Map<String, Int> relations = this.kb.countProjectionBindings(newTriple[1], in.getHead(), in.getBody());
-        		for (Entry<String, Int> entry : relations.entrySet()) {
-        			// TODO
-        		}
-        		
-    			newTriple[openPos] = tmp;
-    		}
-    		
-    	}
-    	return output;
+        Collection<Rule> output = new ArrayList<Rule>();
+        if (!in.getOpened()) {
+            return output;
+        }
+        if (in.getTriples().size() == 2) {
+            int a = 1;
+            a++;
+        }
+        String[] newTriple = in.getTriplePattern();
+        for (int openPos=0; openPos<=2; openPos += 2) {
+            int fixedPos = 2 - openPos;
+            int nPatterns = in.getTriples().size();
+            for (String fixedVar : in.getFixedVars()) {
+                String tmp = newTriple[fixedPos];
+                newTriple[fixedPos] = fixedVar;
+                in.add(newTriple);
+                Map<String, Int> relations = this.kb.countProjectionBindings(newTriple[1], in.getHead(), in.getBody());
+                in.getTriples().remove(nPatterns);
+                for (Entry<String, Int> entry : relations.entrySet()) {
+                    if (entry.getValue().value < minCardinality) {
+                        continue;
+                    }
+                    if (entry.getKey().equals(in.getHead())) {
+                        continue;
+                    }
+                    String tmp2 = newTriple[1];
+                    newTriple[1] = entry.getKey();
+                    Rule candidate = new Rule(in, newTriple, entry.getValue().value);
+                    newTriple[1] = tmp2;
+                    if (!candidate.getRedundantAtoms().isEmpty()) {
+                        continue;
+                    }
+                    candidate.setParent(in);
+                    output.add(candidate);
+                    candidate.flag = new String("OpenedAtoms");
+                }
+                newTriple[fixedPos] = tmp;
+            }
+        }
+        return output;
     }
     
     public long getTotalCount(Rule candidate) {
-		if(countAlwaysOnSubject){
-			return totalSubjectCount;
-		}else{
-			int projVarPosition = candidate.getFunctionalVariablePosition();
-			if(projVarPosition == 0)
-				return totalSubjectCount;
-			else if(projVarPosition == 2)
-				return totalObjectCount;
-			else
-				return 1;
-		}
+        if(countAlwaysOnSubject){
+            return totalSubjectCount;
+        }else{
+            int projVarPosition = candidate.getFunctionalVariablePosition();
+            if(projVarPosition == 0)
+                return totalSubjectCount;
+            else if(projVarPosition == 2)
+                return totalObjectCount;
+            else
+                return 1;
+        }
     }
     
     public long getHeadCardinality(Rule rule){
@@ -691,14 +734,14 @@ public class MiningAssistant {
     }
     
     public boolean canAddInstantiatedAtoms() {
-    	return this.getAllowConstants() || this.enforceConstants;
+        return this.getAllowConstants() || this.enforceConstants;
     }
     
     public void buildRelationsDictionary() {
-    	Map<String, Int> relations = this.kb.getRelations();
-    	for (Entry<String, Int> relation : relations.entrySet()) {
-    		this.headCardinalities.put(relation.getKey(), (double)relation.getValue().value);
-    	}
+        Map<String, Int> relations = this.kb.getRelations();
+        for (Entry<String, Int> relation : relations.entrySet()) {
+            this.headCardinalities.put(relation.getKey(), (double)relation.getValue().value);
+        }
     }
     
     public double computeStdConfidence(Rule rule) {
@@ -752,7 +795,7 @@ public class MiningAssistant {
                 freeVarPos = 0;
         }
 
-        existentialTriple[freeVarPos] = new String("?xw");
+        existentialTriple[freeVarPos] = new String(getFreeVar());
         if (!antecedent.isEmpty()) {
             antecedent.add(existentialTriple);
             try{
@@ -786,21 +829,11 @@ public class MiningAssistant {
     }
     
     public boolean acceptForOutput(Rule candidate) {
-    	if (candidate.getTriples().size() == 3
-				&& candidate.getTriples().get(2)[0].equals("<John_Hopkins_(lawyer)>")
-				&& candidate.getTriples().get(2)[1].equals("<livesIn>")
-				&& candidate.getTriples().get(2)[2].equals("?c")
-				&& candidate.getTriples().get(1)[0].equals("?a")
-				&& candidate.getTriples().get(1)[1].equals("<isCitizenOf>")
-				&& candidate.getTriples().get(1)[2].equals("?c")
-				&& candidate.getTriples().get(0)[0].equals("?a")
-				&& candidate.getTriples().get(0)[1].equals("<isCitizenOf>")
-				&& candidate.getTriples().get(0)[2].equals("<United_Kingdom>")) {
-			int a = 1;
-			a++;
-		}
-        if (!candidate.isClosed())
+        if (!candidate.getOpened() && !candidate.isClosed())
             return false;
+        if (candidate.getOpened() && candidate.getTriples().size() <= 1) {
+            return false;
+        }
         computeStdConfidence(candidate);
         computePcaConfidence(candidate);
         if (candidate.getPcaConfidence() < this.minPcaConfidence
@@ -828,14 +861,21 @@ public class MiningAssistant {
     public Collection<Rule> refine(Rule in) {
         double threshold = this.getThreshold(in);
         
+        if (in.getOpened() && in.getTriples().size() == 2) {
+            int a = 1;
+            a++;
+        }
+        
         Collection<Rule> out = new LinkedHashSet<Rule>();
         Collection<Rule> danglingAtoms = getDanglingAtoms(in, threshold);
         Collection<Rule> instantiatedAtoms = getInstantiatedAtoms(in, danglingAtoms, threshold);
         Collection<Rule> closingAtoms = getClosingAtoms(in, threshold);
+        Collection<Rule> openedAtoms = getOpenedAtoms(in, threshold);
         
         out.addAll(danglingAtoms);
         out.addAll(instantiatedAtoms);
         out.addAll(closingAtoms);
+        out.addAll(openedAtoms);
         return out;
     }
 }

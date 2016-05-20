@@ -49,46 +49,63 @@ public class Rule {
     }
     
     public Rule(String[] atom, double cardinality) {
-    	this();
-    	this.setSupport((long)cardinality);
-    	this.add(atom);
-    	if (KB.isVariable(atom[0]) && this.varPatternCnt <= atom[0].charAt(1) - 'a') {
-    		this.varPatternCnt = atom[0].charAt(1) - 'a' + 1;
-    	}
-    	if (KB.isVariable(atom[2]) && this.varPatternCnt <= atom[2].charAt(1) - 'a') {
-    		this.varPatternCnt = atom[2].charAt(1) - 'a' + 1;
-    	}
+        this();
+        this.setSupport((long)cardinality);
+        this.add(atom);
+        if (KB.isVariable(atom[0])) {
+            if (atom[0].length() == 2 && this.varPatternCnt <= atom[0].charAt(1) - 'a') {
+                this.varPatternCnt = atom[0].charAt(1) - 'a' + 1;
+            } else if (atom[0].length() > 2) {
+                this.varPatternCnt = atom[0].charAt(1) - 'a' + 1 + 26 * Integer.parseInt(atom[0].substring(2));
+            }
+        }
+        if (KB.isVariable(atom[2])) {
+            if (atom[2].length() == 2 && this.varPatternCnt <= atom[2].charAt(1) - 'a') {
+                this.varPatternCnt = atom[2].charAt(1) - 'a' + 1;
+            } else if (atom[2].length() > 2) {
+                this.varPatternCnt = atom[2].charAt(1) - 'a' + 1 + 26 * Integer.parseInt(atom[2].substring(2));
+            }
+        }
     }
     
     public Rule(Rule rule, String[] atom, long support) {
-    	this(rule, support);
-    	this.add(atom);
-    	this.varPatternCnt = rule.varPatternCnt;
+        this(rule, support);
+        this.add(atom);
+        this.varPatternCnt = rule.varPatternCnt;
 
-    	if (KB.isVariable(atom[0]) && this.varPatternCnt <= atom[0].charAt(1) - 'a') {
-    		this.varPatternCnt = atom[0].charAt(1) - 'a' + 1;
-    	}
-    	if (KB.isVariable(atom[2]) && this.varPatternCnt <= atom[2].charAt(1) - 'a') {
-    		this.varPatternCnt = atom[2].charAt(1) - 'a' + 1;
-    	}
+        if (KB.isVariable(atom[0])) {
+            if (atom[0].length() == 2 && this.varPatternCnt <= atom[0].charAt(1) - 'a') {
+                this.varPatternCnt = atom[0].charAt(1) - 'a' + 1;
+            } else if (atom[0].length() > 2) {
+                this.varPatternCnt = atom[0].charAt(1) - 'a' + 1 + 26 * Integer.parseInt(atom[0].substring(2));
+            }
+        }
+        if (KB.isVariable(atom[2])) {
+            if (atom[2].length() == 2 && this.varPatternCnt <= atom[2].charAt(1) - 'a') {
+                this.varPatternCnt = atom[2].charAt(1) - 'a' + 1;
+            } else if (atom[2].length() > 2) {
+                this.varPatternCnt = atom[2].charAt(1) - 'a' + 1 + 26 * Integer.parseInt(atom[2].substring(2));
+            }
+        }
     }
     
     public Rule(Rule rule, long support) {
-    	this();
-    	this.stdConfidence = rule.stdConfidence;
-    	this.pcaConfidence = rule.pcaConfidence;
-    	this.headCoverage = rule.headCoverage;
-    	this.setSupport(support);
-    	this.supportRatio = rule.supportRatio;
-    	this.stdConfidenceUpperBound = rule.stdConfidenceUpperBound;
-    	this.pcaConfidenceUpperBound = rule.pcaConfidenceUpperBound;
-    	this.functionalVariablePosition = rule.functionalVariablePosition;
-    	for(String[] triple : rule.triples) {
-    		this.add(triple);
-    	}
-    	this.varPatternCnt = rule.varPatternCnt;
+        this();
+        this.stdConfidence = rule.stdConfidence;
+        this.pcaConfidence = rule.pcaConfidence;
+        this.headCoverage = rule.headCoverage;
+        this.setSupport(support);
+        this.supportRatio = rule.supportRatio;
+        this.stdConfidenceUpperBound = rule.stdConfidenceUpperBound;
+        this.pcaConfidenceUpperBound = rule.pcaConfidenceUpperBound;
+        this.functionalVariablePosition = rule.functionalVariablePosition;
+        for(String[] triple : rule.triples) {
+            this.add(triple);
+        }
+        this.varPatternCnt = rule.varPatternCnt;
         this.pcaBodySize = rule.pcaBodySize;
         this.stdBodySize = rule.stdBodySize;
+        this.opened = rule.opened;
     }
     
     public KB getKb() {
@@ -142,14 +159,14 @@ public class Rule {
     }
 
     public long getSupport() {
-		return support;
-	}
+        return support;
+    }
 
-	public void setSupport(long support) {
-		this.support = support;
-	}
+    public void setSupport(long support) {
+        this.support = support;
+    }
 
-	public double getPcaBodySize() {
+    public double getPcaBodySize() {
         return pcaBodySize;
     }
 
@@ -174,40 +191,40 @@ public class Rule {
     }
 
     public boolean getOpened() {
-		return opened;
-	}
+        return opened;
+    }
 
-	public void setOpened(boolean opened) {
-		this.opened = opened;
-	}
+    public void setOpened(boolean opened) {
+        this.opened = opened;
+    }
 
-	public String[] getHead() {
-		return this.triples.get(0);
-	}
+    public String[] getHead() {
+        return this.triples.get(0);
+    }
 
-	public List<String[]> getBody() {
-		return this.triples.subList(1, this.triples.size());
-	}
+    public List<String[]> getBody() {
+        return this.triples.subList(1, this.triples.size());
+    }
 
-	public List<Rule> getAncestors() {
-		return ancestors;
-	}
+    public List<Rule> getAncestors() {
+        return ancestors;
+    }
 
-	public void setAncestors(List<Rule> ancestors) {
-		this.ancestors = ancestors;
-	}
+    public void setAncestors(List<Rule> ancestors) {
+        this.ancestors = ancestors;
+    }
 
-	public Rule getParent() {
-		return parent;
-	}
+    public Rule getParent() {
+        return parent;
+    }
 
-	public void setParent(Rule parent) {
-		//this.parent = parent;
-	    if (parent != null)
-	        this.ancestors.add(parent);
-	}
+    public void setParent(Rule parent) {
+        //this.parent = parent;
+        if (parent != null)
+            this.ancestors.add(parent);
+    }
 
-	public void add(String []str) {
+    public void add(String []str) {
         this.triples.add(str.clone());
     }
     
@@ -231,20 +248,20 @@ public class Rule {
     }
     
     public boolean isPerfect() {
-    	return (this.getPcaConfidence() >= 1.0 && this.pcaBodySize > 0);
+        return (this.getPcaConfidence() >= 1.0 && this.pcaBodySize > 0);
     }
     
     public String toString() {
-    	String out = new String();
-    	String[] strs;
-    	for (int i=this.triples.size() - 1; i>=0; i--) {
-    	    strs = this.triples.get(i);
-    	    if (i > 0)
-    	        out = out + strs[0] + " " + strs[1] + " " + strs[2] + ",";
-    	    else
-    	        out = out + strs[0] + " " + strs[1] + " " + strs[2];
-    	}
-    	return out;
+        String out = new String();
+        String[] strs;
+        for (int i=this.triples.size() - 1; i>=0; i--) {
+            strs = this.triples.get(i);
+            if (i > 0)
+                out = out + strs[0] + " " + strs[1] + " " + strs[2] + ",";
+            else
+                out = out + strs[0] + " " + strs[1] + " " + strs[2];
+        }
+        return out;
     }
 
     @Override
@@ -254,6 +271,9 @@ public class Rule {
         result = prime * result + (int) support;
         result = prime * result + (int) getRealLength();
         result = prime * result + ((getHeadKey() == null) ? 0 : getHeadKey().hashCode());
+        if (this.opened) {
+            result = prime * result * this.getTriples().size();
+        }
         return result;
     }
     
@@ -284,7 +304,7 @@ public class Rule {
             return false;
         }
         if (this.getOpenVars().size() != rule.getOpenVars().size()) {
-        	return false;
+            return false;
         }
 //        RuleGraphBak rg1 = new RuleGraphBak(this);
 //        RuleGraphBak rg2 = new RuleGraphBak(rule);
@@ -294,84 +314,84 @@ public class Rule {
         synchronized (rg) {
             hash1 = rg.init(this).calcHash();
             hash2 = rg.init(rule).calcHash();
-		}
+        }
         return hash1 == hash2;
     }
     
     public String[] getTriplePattern() {
-    	String[] result = new String[3];
-    	result[1] = "?p";
-    	if(varPatternCnt < 26) {
-    		result[0] = "?" + (char)('a' + varPatternCnt);
-    	} else {
-    		result[0] = "?" + (char)('a' + varPatternCnt % 26) + varPatternCnt / 26;
-    	}
-    	varPatternCnt++;
-    	if(varPatternCnt < 26) {
-    		result[2] = "?" + (char)('a' + varPatternCnt);
-    	} else {
-    		result[2] = "?" + (char)('a' + varPatternCnt % 26) + varPatternCnt / 26;
-    	}
-    	varPatternCnt--;
-    	return result;
+        String[] result = new String[3];
+        result[1] = "?p";
+        if(varPatternCnt < 26) {
+            result[0] = "?" + (char)('a' + varPatternCnt);
+        } else {
+            result[0] = "?" + (char)('a' + varPatternCnt % 26) + varPatternCnt / 26;
+        }
+        varPatternCnt++;
+        if(varPatternCnt < 26) {
+            result[2] = "?" + (char)('a' + varPatternCnt);
+        } else {
+            result[2] = "?" + (char)('a' + varPatternCnt % 26) + varPatternCnt / 26;
+        }
+        varPatternCnt--;
+        return result;
     }
        
     protected Map<String, Int> getVarHistogram() {
-    	Map<String, Int> varHistogram = new HashMap<String, Int>();
-    	for (String[] triple: triples) {
-    		if (KB.isVariable(triple[0])) {
-    			if (varHistogram.containsKey(triple[0])) {
-    				varHistogram.get(triple[0]).value++;
-    			} else {
-    				varHistogram.put(triple[0], new Int(1));
-    			}
-    		}
-    		if(!triple[2].equals(triple[0]) && KB.isVariable(triple[2])) {
-    			if (varHistogram.containsKey(triple[2])) {
-    				varHistogram.get(triple[2]).value++;
-    			} else {
-    				varHistogram.put(triple[2], new Int(1));
-    			}
-    		}
-    	}
-    	return varHistogram;
+        Map<String, Int> varHistogram = new HashMap<String, Int>();
+        for (String[] triple: triples) {
+            if (KB.isVariable(triple[0])) {
+                if (varHistogram.containsKey(triple[0])) {
+                    varHistogram.get(triple[0]).value++;
+                } else {
+                    varHistogram.put(triple[0], new Int(1));
+                }
+            }
+            if(!triple[2].equals(triple[0]) && KB.isVariable(triple[2])) {
+                if (varHistogram.containsKey(triple[2])) {
+                    varHistogram.get(triple[2]).value++;
+                } else {
+                    varHistogram.put(triple[2], new Int(1));
+                }
+            }
+        }
+        return varHistogram;
     }
     
     public boolean isClosed() {
-    	if (triples.isEmpty())
-    		return false;
-    	
-    	Map<String, Int> varHistogram = getVarHistogram();
-    	for(Entry<String, Int> var : varHistogram.entrySet()) {
-    		if (varHistogram.get(var.getKey()).value < 2)
-    			return false;
-    	}
-    	
-    	return true;
+        if (triples.isEmpty())
+            return false;
+        
+        Map<String, Int> varHistogram = getVarHistogram();
+        for(Entry<String, Int> var : varHistogram.entrySet()) {
+            if (varHistogram.get(var.getKey()).value < 2)
+                return false;
+        }
+        
+        return true;
     }
     
     public List<String> getOpenVars() {
-    	List<String> openVars = new ArrayList<String>();
-    	Map<String, Int> varGram = getVarHistogram();
-    	for (Entry<String, Int> var : varGram.entrySet()) {
-    		if (varGram.get(var.getKey()).value < 2) {
-    			openVars.add(var.getKey());
-    		}
-    	}
-    	return openVars;
+        List<String> openVars = new ArrayList<String>();
+        Map<String, Int> varGram = getVarHistogram();
+        for (Entry<String, Int> var : varGram.entrySet()) {
+            if (varGram.get(var.getKey()).value < 2) {
+                openVars.add(var.getKey());
+            }
+        }
+        return openVars;
     }
 
     public List<String> getAllVars() {
-    	List<String> allVars = new ArrayList<String>();
-    	for (String[] triple : this.triples) {
-    		if (KB.isVariable(triple[0]) && !allVars.contains(triple[0])) {
-    			allVars.add(triple[0]);
-    		}
-    		if (KB.isVariable(triple[2]) && !allVars.contains(triple[2])) {
-    			allVars.add(triple[2]);
-    		}
-    	}
-    	return allVars;
+        List<String> allVars = new ArrayList<String>();
+        for (String[] triple : this.triples) {
+            if (KB.isVariable(triple[0]) && !allVars.contains(triple[0])) {
+                allVars.add(triple[0]);
+            }
+            if (KB.isVariable(triple[2]) && !allVars.contains(triple[2])) {
+                allVars.add(triple[2]);
+            }
+        }
+        return allVars;
     }
     
     public int cardinalityForRelation(String relation) {
@@ -385,12 +405,12 @@ public class Rule {
     }
     
     protected boolean equals(String[] atom1, String[] atom2) {
-    	return atom1[0].equals(atom2[0]) && atom1[1].equals(atom2[1]) && atom1[2].equals(atom2[2]);
+        return atom1[0].equals(atom2[0]) && atom1[1].equals(atom2[1]) && atom1[2].equals(atom2[2]);
     }
     
     public boolean isRedundantRecursive() {
-    	List<String[]> redundantAtoms = getRedundantAtoms();
-    	String[] lastPattern = this.triples.isEmpty() ? null : this.triples.get(this.triples.size() - 1);
+        List<String[]> redundantAtoms = getRedundantAtoms();
+        String[] lastPattern = this.triples.isEmpty() ? null : this.triples.get(this.triples.size() - 1);
         for (String[] redundantAtom : redundantAtoms) {
             if (equals(lastPattern, redundantAtom)) {
                 return true;
@@ -401,7 +421,7 @@ public class Rule {
     }
 
     public List<String[]> getRedundantAtoms() {
-    	String[] newAtom = this.triples.isEmpty() ? null : this.triples.get(this.triples.size() - 1);
+        String[] newAtom = this.triples.isEmpty() ? null : this.triples.get(this.triples.size() - 1);
         List<String[]> redundantAtoms = new ArrayList<String[]>();
         for (String[] pattern : triples) {
             if (pattern != newAtom) {
@@ -456,7 +476,7 @@ public class Rule {
     }
     
     public String getHeadRelation() {
-    	return this.triples.get(0)[1].toString();
+        return this.triples.get(0)[1].toString();
     }
     
     public int getRealLength() {
@@ -470,17 +490,17 @@ public class Rule {
     }
     
     public String getHeadKey() {
-    	if (headKey == null) {
-    		computeHeadKey();
-    	}
-		return headKey;
-	}
+        if (headKey == null) {
+            computeHeadKey();
+        }
+        return headKey;
+    }
 
-	public void setHeadKey(String headKey) {
-		this.headKey = headKey;
-	}
+    public void setHeadKey(String headKey) {
+        this.headKey = headKey;
+    }
 
-	public Rule instantiateConstant(int danglingPosition, String constant, long cardinality) {
+    public Rule instantiateConstant(int danglingPosition, String constant, long cardinality) {
         Rule newQuery = new Rule(this, cardinality);
         String[] lastNewPattern = newQuery.getTriples().get(newQuery.getTriples().size() - 1);
         lastNewPattern[danglingPosition] = constant;
@@ -489,21 +509,21 @@ public class Rule {
     }
     
     public void computeHeadKey() {
-    	this.setHeadKey(this.triples.get(0)[1]);
-    	if (!KB.isVariable(this.triples.get(0)[2])) {
-    		setHeadKey(getHeadKey() + this.triples.get(0)[2]);
-    	} else if (!KB.isVariable(this.triples.get(0)[0])) {
-    		setHeadKey(getHeadKey() + this.triples.get(0)[0]);
-    	}
+        this.setHeadKey(this.triples.get(0)[1]);
+        if (!KB.isVariable(this.triples.get(0)[2])) {
+            setHeadKey(getHeadKey() + this.triples.get(0)[2]);
+        } else if (!KB.isVariable(this.triples.get(0)[0])) {
+            setHeadKey(getHeadKey() + this.triples.get(0)[0]);
+        }
     }
     
     public void setFunctionalVariablePosition(int functionalVariablePosition) {
-    	this.functionalVariablePosition = functionalVariablePosition;
+        this.functionalVariablePosition = functionalVariablePosition;
     }
 
     
     public int getFunctionalVariablePosition() {
-    	return this.functionalVariablePosition;
+        return this.functionalVariablePosition;
     }
     public String getFunctionalVariable() {
         return this.triples.get(0)[this.functionalVariablePosition];
@@ -523,26 +543,27 @@ public class Rule {
         }
         return false;
     }
+
+    public List<String> getFixedVars() {
+        if (this.getTriples().size() == 1) {
+            return this.getAllVars();
+        }
+        List<String> fixedVars = new ArrayList<String>();
+        Map<String, Int> varGram = getVarHistogram();
+        for (Entry<String, Int> var : varGram.entrySet()) {
+            if (varGram.get(var.getKey()).value > 1) {
+                fixedVars.add(var.getKey());
+                break;
+            }
+        }
+        return fixedVars;
+    }
     
     public static void main(String[] args) {
-    	Rule q = new Rule();
-    	for (int i = 0;  i < 50; ++i) {
-    		System.out.println(Arrays.toString(q.getTriplePattern()));
-    	}
+        Rule q = new Rule();
+        for (int i = 0;  i < 100; ++i) {
+            System.out.println(Arrays.toString(q.getTriplePattern()));
+            q = new Rule(q, q.getTriplePattern(), 0);
+        }
     }
-
-	public List<String> getFixedVars() {
-		if (this.getTriples().size() == 1) {
-			return this.getAllVars();
-		}
-		List<String> fixedVars = new ArrayList<String>();
-    	Map<String, Int> varGram = getVarHistogram();
-    	for (Entry<String, Int> var : varGram.entrySet()) {
-    		if (varGram.get(var.getKey()).value > 1) {
-    			fixedVars.add(var.getKey());
-    			break;
-    		}
-    	}
-		return fixedVars;
-	}
 }

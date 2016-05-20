@@ -123,8 +123,8 @@ public class RuleGraph {
 //          RuleGraphBak rg2 = new RuleGraphBak(q2);
 //          boolean res = rg1.calcHash() == rg2.calcHash();
 //        }
-//  	l2 = System.currentTimeMillis();
-//  	System.out.println(l2 - l1);
+//      l2 = System.currentTimeMillis();
+//      System.out.println(l2 - l1);
 //      return hash1 == hash2;
     }
 }

@@ -33,8 +33,8 @@ public class KB {
     private static KB instance;
     public enum Column { Subject, Relation, Object };
     
-    /** Can instantiate a variable in a query with a value */	
-	public static class Instantiator implements Closeable {
+    /** Can instantiate a variable in a query with a value */    
+    public static class Instantiator implements Closeable {
         List<String[]> query;
 
         int[] positions;
@@ -92,7 +92,7 @@ public class KB {
     }
     
     public Map<String, Int> getRelations() {
-    	return this.relationSize;
+        return this.relationSize;
     }
     
     public void loadFile(List<File> files) {
@@ -202,288 +202,288 @@ public class KB {
     }
     
     public static boolean isVariable(String var) {
-    	return (var.length() > 0 && var.charAt(0) == '?');
+        return (var.length() > 0 && var.charAt(0) == '?');
     }
     
     public static int numVariables(String[] triple) {
-    	int cnt = 0;
-    	for(int i=0; i<triple.length; i++) {
-    		if (isVariable(triple[i])) {
-    			cnt++;
-    		}
-    	}
-    	return cnt;
+        int cnt = 0;
+        for(int i=0; i<triple.length; i++) {
+            if (isVariable(triple[i])) {
+                cnt++;
+            }
+        }
+        return cnt;
     }
     
     // map, key1
     protected Map<String, Int> get(Map<String, Map<String, Map<String, Int>>> map, String key) {
-    	Map<String, Map<String, Int>> m = map.get(key);
-    	Map<String, Int> out = new HashMap<String, Int>();
-    	try {
-	    	for (Entry<String, Map<String, Int>> entry : m.entrySet())
-	    		out.put(entry.getKey(), new Int(entry.getValue().size()));
-    	} catch (Exception e) {
-    		e.printStackTrace();
-    	}
-		return out;
-	}
+        Map<String, Map<String, Int>> m = map.get(key);
+        Map<String, Int> out = new HashMap<String, Int>();
+        try {
+            for (Entry<String, Map<String, Int>> entry : m.entrySet())
+                out.put(entry.getKey(), new Int(entry.getValue().size()));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return out;
+    }
     
     // map, key1, key2
     protected Map<String, Int> get(Map<String, Map<String, Map<String, Int>>> map, String key1, String key2) {
-    	Map<String, Map<String, Int>> mm = map.get(key1);
-    	if(mm == null)
-    		return new HashMap<String, Int>();
-    	Map<String, Int> mm2 = mm.get(key2);
-    	if (mm2 == null) {
-    	    return new HashMap<String, Int>();
-    	}
-    	return mm2;
+        Map<String, Map<String, Int>> mm = map.get(key1);
+        if(mm == null)
+            return new HashMap<String, Int>();
+        Map<String, Int> mm2 = mm.get(key2);
+        if (mm2 == null) {
+            return new HashMap<String, Int>();
+        }
+        return mm2;
     }
     
     // ����String : frequency��Map��posָ��String��λ�ã�subject or relation or object����
     // select triple[pos] from map where &&{projectionTriple[not var] = Instantiated atom}
     public Map<String, Int> countBindings(int pos, String[] projectionTriple) {
-    	if(numVariables(projectionTriple) == 1) {
-    		return resultsOneVariable(projectionTriple);
-//    		switch (pos) {
-//    		case 0:
-//    			return relationObjectSubjectMap.get(projectionTriple[1]).get(projectionTriple[2]);
-//    		case 1:
-//    			return subjectObjectRelationMap.get(projectionTriple[0]).get(projectionTriple[2]);
-//    		case 2:
-//    			return subjectRelationObjectMap.get(projectionTriple[0]).get(projectionTriple[1]);
-//    		}
-    	} else if (numVariables(projectionTriple) == 2) {
-	    	switch (pos) {
-	    	case 0: // get subjects frequency
-	    		if (isVariable(projectionTriple[1])) { // ?x ?r object
-	    			return get(objectSubjectRelationMap, projectionTriple[2]);
-	    		} else { // ?x relation ?y
-	    			return get(relationSubjectObjectMap, projectionTriple[1]);
-	    		}
-	
-	    	case 1: // get relations frequency
-	    		if (isVariable(projectionTriple[0])) { // ?x ?r object
-	    			return get(objectRelationSubjectMap, projectionTriple[2]);
-	    		} else { // ?subject ?r ?y
-	    			return get(subjectRelationObjectMap, projectionTriple[0]);
-	    		}
-	
-	    	case 2: // get objects frequency
-	    		if (isVariable(projectionTriple[1])) { // ?subject ?r ?y
-	    			return get(subjectObjectRelationMap, projectionTriple[0]);
-	    		} else { // ?x relation ?y
-	    			return get(relationObjectSubjectMap, projectionTriple[1]);
-	    		}
-	    	}
-    	} else if(numVariables(projectionTriple) == 3) {
-    		switch (pos) {
-    		case 0:
-    			return subjectSize;
-    		case 1:
-    			return relationSize;
-    		case 2:
-    			return objectSize;
-    		}
-    	}
-    	return null;
+        if(numVariables(projectionTriple) == 1) {
+            return resultsOneVariable(projectionTriple);
+//            switch (pos) {
+//            case 0:
+//                return relationObjectSubjectMap.get(projectionTriple[1]).get(projectionTriple[2]);
+//            case 1:
+//                return subjectObjectRelationMap.get(projectionTriple[0]).get(projectionTriple[2]);
+//            case 2:
+//                return subjectRelationObjectMap.get(projectionTriple[0]).get(projectionTriple[1]);
+//            }
+        } else if (numVariables(projectionTriple) == 2) {
+            switch (pos) {
+            case 0: // get subjects frequency
+                if (isVariable(projectionTriple[1])) { // ?x ?r object
+                    return get(objectSubjectRelationMap, projectionTriple[2]);
+                } else { // ?x relation ?y
+                    return get(relationSubjectObjectMap, projectionTriple[1]);
+                }
+    
+            case 1: // get relations frequency
+                if (isVariable(projectionTriple[0])) { // ?x ?r object
+                    return get(objectRelationSubjectMap, projectionTriple[2]);
+                } else { // ?subject ?r ?y
+                    return get(subjectRelationObjectMap, projectionTriple[0]);
+                }
+    
+            case 2: // get objects frequency
+                if (isVariable(projectionTriple[1])) { // ?subject ?r ?y
+                    return get(subjectObjectRelationMap, projectionTriple[0]);
+                } else { // ?x relation ?y
+                    return get(relationObjectSubjectMap, projectionTriple[1]);
+                }
+            }
+        } else if(numVariables(projectionTriple) == 3) {
+            switch (pos) {
+            case 0:
+                return subjectSize;
+            case 1:
+                return relationSize;
+            case 2:
+                return objectSize;
+            }
+        }
+        return null;
     }
     
     public Map<String, Int> countProjectionBindings(int pos, String[] projectionTriple, List<String[]> otherTriples) {
-    	Map<String, Int> result = new HashMap<String, Int>();
-    	switch (numVariables(projectionTriple)) {
-    	case 1:
-    		try (Instantiator insty = new Instantiator(otherTriples, projectionTriple[pos])) {
-    			for (String inst : resultsOneVariable(projectionTriple).keySet()) {
-    				if(existsBS(insty.instantiate(inst))) {
-    					MapAdd(result, inst, 1);
-    				}
-    			}
-    		}
-    		break;
-    	case 2:
-			int firstVar = getFirstVarPos(projectionTriple);
-			int secondVar = getSecondVarPos(projectionTriple);
-			Map<String, Map<String, Int>> instantiations = resultsTwoVariables(
-					projectionTriple, 
-					firstVar,
-					secondVar);
-			try (Instantiator insty1 = new Instantiator(otherTriples,
-					projectionTriple[firstVar]);
-					Instantiator insty2 = new Instantiator(otherTriples,
-							projectionTriple[secondVar])) {
-				for (String val1 : instantiations.keySet()) {
-					insty1.instantiate(val1);
-					for (String val2 : instantiations.get(val1).keySet()) {
-						if (existsBS(insty2.instantiate(val2)))
-	    					MapAdd(result, firstVar == pos ? val1 : val2, 1);
-					}
-				}
-			}
-			break;
-    	case 3:
-    	default:
-    		break;
-    	}
-    	return result;
+        Map<String, Int> result = new HashMap<String, Int>();
+        switch (numVariables(projectionTriple)) {
+        case 1:
+            try (Instantiator insty = new Instantiator(otherTriples, projectionTriple[pos])) {
+                for (String inst : resultsOneVariable(projectionTriple).keySet()) {
+                    if(existsBS(insty.instantiate(inst))) {
+                        MapAdd(result, inst, 1);
+                    }
+                }
+            }
+            break;
+        case 2:
+            int firstVar = getFirstVarPos(projectionTriple);
+            int secondVar = getSecondVarPos(projectionTriple);
+            Map<String, Map<String, Int>> instantiations = resultsTwoVariables(
+                    projectionTriple, 
+                    firstVar,
+                    secondVar);
+            try (Instantiator insty1 = new Instantiator(otherTriples,
+                    projectionTriple[firstVar]);
+                    Instantiator insty2 = new Instantiator(otherTriples,
+                            projectionTriple[secondVar])) {
+                for (String val1 : instantiations.keySet()) {
+                    insty1.instantiate(val1);
+                    for (String val2 : instantiations.get(val1).keySet()) {
+                        if (existsBS(insty2.instantiate(val2)))
+                            MapAdd(result, firstVar == pos ? val1 : val2, 1);
+                    }
+                }
+            }
+            break;
+        case 3:
+        default:
+            break;
+        }
+        return result;
     }
     
     public int firstVariableInCommon(String[] t1, String[] t2) {
-		for (int i = 0; i < t1.length; ++i) {
-			if (KB.isVariable(t1[i]) && getVarPos(t2, t1[i]) != -1)
-				return i;
-		}
-		return -1;
-	}
+        for (int i = 0; i < t1.length; ++i) {
+            if (KB.isVariable(t1[i]) && getVarPos(t2, t1[i]) != -1)
+                return i;
+        }
+        return -1;
+    }
     
     public static void MapAdd(Map<String, Int> map, String key, long delta) {
-    	Int val = map.get(key);
-    	if (val == null) {
-    		val = new Int(0);
-    		map.put(key, val);
-    	}
-    	val.value += delta;
+        Int val = map.get(key);
+        if (val == null) {
+            val = new Int(0);
+            map.put(key, val);
+        }
+        val.value += delta;
     }
     
     public static void MapIncrease(Map<String, Int> map, Set<String> keySet) {
-    	for (String key : keySet) {
-    		MapAdd(map, key, 1);
-    	}
+        for (String key : keySet) {
+            MapAdd(map, key, 1);
+        }
     }
     
     public static void MapIncrease(Map<String, Int> map, Map<String, Int> mm) {
-    	for (Entry<String, Int> entry : mm.entrySet()) {
-    		MapAdd(map, entry.getKey(), entry.getValue().value);
-    	}
+        for (Entry<String, Int> entry : mm.entrySet()) {
+            MapAdd(map, entry.getKey(), entry.getValue().value);
+        }
     }
 
     // the variable may be not in the projectionTriple. it returns the number of instantiation of projection triple
     public Map<String, Int> countProjectionBindings(String variable, String[] projectionTriple, List<String[]> otherTriples) {
-    	int pos = Arrays.asList(projectionTriple).indexOf(variable);
-    	if(otherTriples.isEmpty()) {
-    		return countBindings(pos, projectionTriple);
-    	}
-    	if(pos != -1) {
-    		return countProjectionBindings(pos, projectionTriple, otherTriples);
-    	}
-    	
-    	/* modified by zzq*/
-    	//projectionTriple = otherTriples.get(0);
-    	//otherTriples.remove(0);
-    	//return countProjectionBindings(variable, otherTriples.get(0), otherTriples.subList(1, otherTriples.size()));
-    	
-    	List<String[]> wholeQuery = new ArrayList<String[]>();
-		wholeQuery.add(projectionTriple);
-		wholeQuery.addAll(otherTriples);
+        int pos = Arrays.asList(projectionTriple).indexOf(variable);
+        if(otherTriples.isEmpty()) {
+            return countBindings(pos, projectionTriple);
+        }
+        if(pos != -1) {
+            return countProjectionBindings(pos, projectionTriple, otherTriples);
+        }
+        
+        /* modified by zzq*/
+        //projectionTriple = otherTriples.get(0);
+        //otherTriples.remove(0);
+        //return countProjectionBindings(variable, otherTriples.get(0), otherTriples.subList(1, otherTriples.size()));
+        
+        List<String[]> wholeQuery = new ArrayList<String[]>();
+        wholeQuery.add(projectionTriple);
+        wholeQuery.addAll(otherTriples);
 
-		String instVar = null;
-		int posRestrictive = mostRestrictiveTriple(wholeQuery);
-		String[] mostRestrictive = posRestrictive != -1 ? wholeQuery
-				.get(posRestrictive) : projectionTriple;
-		Map<String, Int> result = new HashMap<String, Int>();
-		int posInCommon = (mostRestrictive != projectionTriple) ? firstVariableInCommon(
-				mostRestrictive, projectionTriple) : -1;
-		int nHeadVars = numVariables(projectionTriple);
+        String instVar = null;
+        int posRestrictive = mostRestrictiveTriple(wholeQuery);
+        String[] mostRestrictive = posRestrictive != -1 ? wholeQuery
+                .get(posRestrictive) : projectionTriple;
+        Map<String, Int> result = new HashMap<String, Int>();
+        int posInCommon = (mostRestrictive != projectionTriple) ? firstVariableInCommon(
+                mostRestrictive, projectionTriple) : -1;
+        int nHeadVars = numVariables(projectionTriple);
 
-		// Avoid ground facts in the projection triple
-		if (mostRestrictive == projectionTriple || posInCommon == -1
-				|| nHeadVars == 1) {
-			switch (numVariables(projectionTriple)) {
-			case 1:
-				instVar = projectionTriple[getFirstVarPos(projectionTriple)];
-				try (Instantiator insty = new Instantiator(otherTriples, instVar)) {
-					for (String inst : resultsOneVariable(projectionTriple).keySet()) {
-						MapIncrease(result, selectDistinct(variable, insty.instantiate(inst)));
-					}
-				}
-				break;
-			case 2:
-				int firstVar = getFirstVarPos(projectionTriple);
-				int secondVar = getSecondVarPos(projectionTriple);
-				Map<String, Map<String, Int>> instantiations = resultsTwoVariables(
-						projectionTriple, firstVar, secondVar);
-				try (Instantiator insty1 = new Instantiator(otherTriples, projectionTriple[firstVar]);
-						Instantiator insty2 = new Instantiator(otherTriples, projectionTriple[secondVar])) { 
-					for (String val1 : instantiations.keySet()) {
-						insty1.instantiate(val1);
-						for (String val2 : instantiations.get(val1).keySet()) {
-						    Set<String> distinct = selectDistinct(variable, insty2.instantiate(val2));
-							MapIncrease(result, distinct);
-						}
-					}
-				}
-				break;
-			case 3:
-			default:
-//				throw new UnsupportedOperationException(
-//						"3 variables in the projection triple are not yet supported: "
-//								+ toString(projectionTriple) + ", "
-//								+ toString(otherTriples));
-			}
-		} else {
-			List<String[]> otherTriples2 = new ArrayList<String[]>(
-					wholeQuery);
-			List<String[]> projectionTripleList = new ArrayList<String[]>(
-					1);
-			projectionTripleList.add(projectionTriple);
-			otherTriples2.remove(projectionTriple);
-			// Iterate over the most restrictive triple
-			switch (numVariables(mostRestrictive)) {
-			case 1:
-				// Go for an improved plan, but remove the bound triple
-				otherTriples2.remove(mostRestrictive);
-				instVar = mostRestrictive[getFirstVarPos(mostRestrictive)];
-				try (Instantiator insty1 = new Instantiator(otherTriples2,
-						instVar);
-						Instantiator insty2 = new Instantiator(
-								projectionTripleList, instVar)) {
-					for (String inst : resultsOneVariable(mostRestrictive).keySet()) {
-						MapIncrease(result, countProjectionBindings(variable, 
-								insty2.instantiate(inst).get(0),
-								insty1.instantiate(inst)));
-					}
-				}
-				break;
-			case 2:
-				int projectionPosition = getVarPos(
-						projectionTriple, mostRestrictive[posInCommon]);
-				// If the projection triple has two variables, bind the common
-				// variable without problems
-				if (nHeadVars == 2) {
-					try (Instantiator insty1 = new Instantiator(otherTriples2,
-							mostRestrictive[posInCommon]);
-							Instantiator insty3 = new Instantiator(
-									projectionTripleList,
-									projectionTriple[projectionPosition])) {
-						Map<String, Int> instantiations = countBindings(
-								posInCommon, mostRestrictive);
-						for (String b1 : instantiations.keySet()) {
-							//System.out.println(variable + insty3.instantiate(b1).get(0) + insty1.instantiate(b1));
-							MapIncrease(result, countProjectionBindings(variable,
-									insty3.instantiate(b1).get(0),
-									insty1.instantiate(b1)));
-						}
-					}
-				} else if (nHeadVars == 1) {
-					instVar = projectionTriple[getFirstVarPos(projectionTriple)];
-					try (Instantiator insty = new Instantiator(otherTriples,
-							instVar)) {
-						for (String inst : resultsOneVariable(projectionTriple).keySet()) {
-							MapIncrease(result, selectDistinct(variable,
-									insty.instantiate(inst)));
-						}
-					}
-				}
-				break;
-			case 3:
-			default:
-//				throw new UnsupportedOperationException(
-//						"3 variables in the most restrictive triple are not yet supported: "
-//								+ toString(mostRestrictive) + ", "
-//								+ toString(wholeQuery));
-			}
-		}
-		return result;
+        // Avoid ground facts in the projection triple
+        if (mostRestrictive == projectionTriple || posInCommon == -1
+                || nHeadVars == 1) {
+            switch (numVariables(projectionTriple)) {
+            case 1:
+                instVar = projectionTriple[getFirstVarPos(projectionTriple)];
+                try (Instantiator insty = new Instantiator(otherTriples, instVar)) {
+                    for (String inst : resultsOneVariable(projectionTriple).keySet()) {
+                        MapIncrease(result, selectDistinct(variable, insty.instantiate(inst)));
+                    }
+                }
+                break;
+            case 2:
+                int firstVar = getFirstVarPos(projectionTriple);
+                int secondVar = getSecondVarPos(projectionTriple);
+                Map<String, Map<String, Int>> instantiations = resultsTwoVariables(
+                        projectionTriple, firstVar, secondVar);
+                try (Instantiator insty1 = new Instantiator(otherTriples, projectionTriple[firstVar]);
+                        Instantiator insty2 = new Instantiator(otherTriples, projectionTriple[secondVar])) { 
+                    for (String val1 : instantiations.keySet()) {
+                        insty1.instantiate(val1);
+                        for (String val2 : instantiations.get(val1).keySet()) {
+                            Set<String> distinct = selectDistinct(variable, insty2.instantiate(val2));
+                            MapIncrease(result, distinct);
+                        }
+                    }
+                }
+                break;
+            case 3:
+            default:
+//                throw new UnsupportedOperationException(
+//                        "3 variables in the projection triple are not yet supported: "
+//                                + toString(projectionTriple) + ", "
+//                                + toString(otherTriples));
+            }
+        } else {
+            List<String[]> otherTriples2 = new ArrayList<String[]>(
+                    wholeQuery);
+            List<String[]> projectionTripleList = new ArrayList<String[]>(
+                    1);
+            projectionTripleList.add(projectionTriple);
+            otherTriples2.remove(projectionTriple);
+            // Iterate over the most restrictive triple
+            switch (numVariables(mostRestrictive)) {
+            case 1:
+                // Go for an improved plan, but remove the bound triple
+                otherTriples2.remove(mostRestrictive);
+                instVar = mostRestrictive[getFirstVarPos(mostRestrictive)];
+                try (Instantiator insty1 = new Instantiator(otherTriples2,
+                        instVar);
+                        Instantiator insty2 = new Instantiator(
+                                projectionTripleList, instVar)) {
+                    for (String inst : resultsOneVariable(mostRestrictive).keySet()) {
+                        MapIncrease(result, countProjectionBindings(variable, 
+                                insty2.instantiate(inst).get(0),
+                                insty1.instantiate(inst)));
+                    }
+                }
+                break;
+            case 2:
+                int projectionPosition = getVarPos(
+                        projectionTriple, mostRestrictive[posInCommon]);
+                // If the projection triple has two variables, bind the common
+                // variable without problems
+                if (nHeadVars == 2) {
+                    try (Instantiator insty1 = new Instantiator(otherTriples2,
+                            mostRestrictive[posInCommon]);
+                            Instantiator insty3 = new Instantiator(
+                                    projectionTripleList,
+                                    projectionTriple[projectionPosition])) {
+                        Map<String, Int> instantiations = countBindings(
+                                posInCommon, mostRestrictive);
+                        for (String b1 : instantiations.keySet()) {
+                            //System.out.println(variable + insty3.instantiate(b1).get(0) + insty1.instantiate(b1));
+                            MapIncrease(result, countProjectionBindings(variable,
+                                    insty3.instantiate(b1).get(0),
+                                    insty1.instantiate(b1)));
+                        }
+                    }
+                } else if (nHeadVars == 1) {
+                    instVar = projectionTriple[getFirstVarPos(projectionTriple)];
+                    try (Instantiator insty = new Instantiator(otherTriples,
+                            instVar)) {
+                        for (String inst : resultsOneVariable(projectionTriple).keySet()) {
+                            MapIncrease(result, selectDistinct(variable,
+                                    insty.instantiate(inst)));
+                        }
+                    }
+                }
+                break;
+            case 3:
+            default:
+//                throw new UnsupportedOperationException(
+//                        "3 variables in the most restrictive triple are not yet supported: "
+//                                + toString(mostRestrictive) + ", "
+//                                + toString(wholeQuery));
+            }
+        }
+        return result;
     }
     
     /**
@@ -686,54 +686,54 @@ public class KB {
      * @param otherTriples
      * @return
      */
-	public long countProjection(String[] projectionTriple, List<String[]> otherTriples) {
-    	if (otherTriples.isEmpty()) {
-    		return count(projectionTriple);
-    	}
-    	switch (numVariables(projectionTriple)) {
-		case 0:
-			return (count(projectionTriple));
-		case 1:
-			long counter = 0;
-			String variable = projectionTriple[getFirstVarPos(projectionTriple)];
-			try (Instantiator insty = new Instantiator(otherTriples, variable)) {
-				for (String inst : resultsOneVariable(projectionTriple).keySet()) {
-					if (existsBS(insty.instantiate(inst)))
-						counter++;
-				}
-			}
-			return (counter);
-		case 2:
-			counter = 0;
-			int firstVar = getFirstVarPos(projectionTriple);
-			int secondVar = getSecondVarPos(projectionTriple);
-			Map<String, Map<String, Int>> instantiations = resultsTwoVariables(projectionTriple, firstVar, secondVar);
-			try (Instantiator insty1 = new Instantiator(otherTriples,
-					projectionTriple[firstVar])) {
-				for (String val1 : instantiations.keySet()) {
-					try (Instantiator insty2 = new Instantiator(
-							insty1.instantiate(val1),
-							projectionTriple[secondVar])) {
-						for (String val2 : instantiations.get(val1).keySet()) {
-							if (existsBS(insty2.instantiate(val2)))
-								counter++;
-						}
-					}
-				}
-			}
-			return (counter);
-		}
-    	return -1;
+    public long countProjection(String[] projectionTriple, List<String[]> otherTriples) {
+        if (otherTriples.isEmpty()) {
+            return count(projectionTriple);
+        }
+        switch (numVariables(projectionTriple)) {
+        case 0:
+            return (count(projectionTriple));
+        case 1:
+            long counter = 0;
+            String variable = projectionTriple[getFirstVarPos(projectionTriple)];
+            try (Instantiator insty = new Instantiator(otherTriples, variable)) {
+                for (String inst : resultsOneVariable(projectionTriple).keySet()) {
+                    if (existsBS(insty.instantiate(inst)))
+                        counter++;
+                }
+            }
+            return (counter);
+        case 2:
+            counter = 0;
+            int firstVar = getFirstVarPos(projectionTriple);
+            int secondVar = getSecondVarPos(projectionTriple);
+            Map<String, Map<String, Int>> instantiations = resultsTwoVariables(projectionTriple, firstVar, secondVar);
+            try (Instantiator insty1 = new Instantiator(otherTriples,
+                    projectionTriple[firstVar])) {
+                for (String val1 : instantiations.keySet()) {
+                    try (Instantiator insty2 = new Instantiator(
+                            insty1.instantiate(val1),
+                            projectionTriple[secondVar])) {
+                        for (String val2 : instantiations.get(val1).keySet()) {
+                            if (existsBS(insty2.instantiate(val2)))
+                                counter++;
+                        }
+                    }
+                }
+            }
+            return (counter);
+        }
+        return -1;
     }
     
-	/**
-	 * if contains the fact
-	 * @param fact
-	 * @return
-	 */
+    /**
+     * if contains the fact
+     * @param fact
+     * @return
+     */
     protected boolean contains(String[] fact) {
         //System.out.println(fact[0] + fact[1] + fact[2]);
-    	return get(subjectRelationObjectMap, fact[0], fact[1]).containsKey(fact[2]);
+        return get(subjectRelationObjectMap, fact[0], fact[1]).containsKey(fact[2]);
     }
     
     /**
@@ -742,17 +742,17 @@ public class KB {
      * @return
      */
     protected long count(String... triples) {
-    	switch(numVariables(triples)) {
-    	case 0:
-    		return contains(triples) ? 1 : 0;
-    	case 1:
-    		return countOneVariable(triples);
-    	case 2:
-    		return countTwoVariable(triples);
-    	case 3:
-    		return getSize();
-    	}
-    	return -1;
+        switch(numVariables(triples)) {
+        case 0:
+            return contains(triples) ? 1 : 0;
+        case 1:
+            return countOneVariable(triples);
+        case 2:
+            return countTwoVariable(triples);
+        case 3:
+            return getSize();
+        }
+        return -1;
     }
     
     /**
@@ -761,7 +761,7 @@ public class KB {
      * @return
      */
     protected long countOneVariable(String[] triple) {
-    	return resultsOneVariable(triple).size();
+        return resultsOneVariable(triple).size();
     }    
     
     /**
@@ -770,17 +770,17 @@ public class KB {
      * @return
      */
     protected long countTwoVariable(String[] triple) {
-    	Int res = null;
-    	if(!isVariable(triple[0])) {
-    		res = subjectSize.get(triple[0]);
-    	} else if(!isVariable(triple[1])) {
-    		res = relationSize.get(triple[1]);
-    	} else if(!isVariable(triple[2])) {
-    		res = objectSize.get(triple[2]);
-    	}
-    	if (res == null)
-    		return 0;
-    	return res.value;
+        Int res = null;
+        if(!isVariable(triple[0])) {
+            res = subjectSize.get(triple[0]);
+        } else if(!isVariable(triple[1])) {
+            res = relationSize.get(triple[1]);
+        } else if(!isVariable(triple[2])) {
+            res = objectSize.get(triple[2]);
+        }
+        if (res == null)
+            return 0;
+        return res.value;
     }
     
     /**
@@ -790,11 +790,11 @@ public class KB {
      * @return
      */
     protected int getVarPos(String[] triple, String variable) {
-    	for(int i=0; i<triple.length; i++) { 
-    		if(triple[i].equals(variable))
-    			return i;
-    	}
-    	return -1;
+        for(int i=0; i<triple.length; i++) { 
+            if(triple[i].equals(variable))
+                return i;
+        }
+        return -1;
     }
     
     /**
@@ -803,11 +803,11 @@ public class KB {
      * @return
      */
     public static int getFirstVarPos(String[] triple) {
-    	for(int i=0; i<triple.length; i++) { 
-    		if(isVariable(triple[i]))
-    			return i;
-    	}
-    	return -1;
+        for(int i=0; i<triple.length; i++) { 
+            if(isVariable(triple[i]))
+                return i;
+        }
+        return -1;
     }
     
     /**
@@ -816,11 +816,11 @@ public class KB {
      * @return
      */
     public static int getSecondVarPos(String[] triple) {
-    	for(int i=getFirstVarPos(triple) + 1; i<triple.length; i++) { 
-    		if(isVariable(triple[i]))
-    			return i;
-    	}
-    	return -1;
+        for(int i=getFirstVarPos(triple) + 1; i<triple.length; i++) { 
+            if(isVariable(triple[i]))
+                return i;
+        }
+        return -1;
     }
     
     /**
@@ -829,19 +829,19 @@ public class KB {
      * @return
      */
     protected int mostRestrictiveTriple(List<String[]> triples) {
-    	int bestPos = -1;
-		long cnt = Long.MAX_VALUE;
-		for (int i = 0; i < triples.size(); i++) {
-			long myCount = count(triples.get(i));
-			if (myCount >= cnt)
-				continue;
-			if (myCount == 0)
-				return (-1);
-			bestPos = i;
-			cnt = myCount;
-		}
-		return (bestPos);
-	}
+        int bestPos = -1;
+        long cnt = Long.MAX_VALUE;
+        for (int i = 0; i < triples.size(); i++) {
+            long myCount = count(triples.get(i));
+            if (myCount >= cnt)
+                continue;
+            if (myCount == 0)
+                return (-1);
+            bestPos = i;
+            cnt = myCount;
+        }
+        return (bestPos);
+    }
     
     /**
      * find the position of triple(contains variable) that has the least fact
@@ -850,22 +850,22 @@ public class KB {
      * @return
      */
     protected int mostRestrictiveTriple(List<String[]> triples, String variable) {
-    	int bestPos = -1;
-		long cnt = Long.MAX_VALUE;
-		for (int i = 0; i < triples.size(); i++) {
-			if (getVarPos(triples.get(i), variable) == -1) {
-				continue;
-			}
-			long myCount = count(triples.get(i));
-			if (myCount >= cnt)
-				continue;
-			if (myCount == 0)
-				return (-1);
-			bestPos = i;
-			cnt = myCount;
-		}
-		return (bestPos);
-	}
+        int bestPos = -1;
+        long cnt = Long.MAX_VALUE;
+        for (int i = 0; i < triples.size(); i++) {
+            if (getVarPos(triples.get(i), variable) == -1) {
+                continue;
+            }
+            long myCount = count(triples.get(i));
+            if (myCount >= cnt)
+                continue;
+            if (myCount == 0)
+                return (-1);
+            bestPos = i;
+            cnt = myCount;
+        }
+        return (bestPos);
+    }
     
     /**
      * If there is a fact that supports the triples rule
@@ -873,58 +873,58 @@ public class KB {
      * @return
      */
     protected boolean existsBS(List<String[]> triples) {
-    	if(triples.isEmpty())
-    		return false;
-    	if(triples.size() == 1) {
-    		return count(triples.get(0)) > 0;
-    	}
-    	int bestPos = mostRestrictiveTriple(triples);
-    	if (bestPos == -1) {
-    		return false;
-    	}
+        if(triples.isEmpty())
+            return false;
+        if(triples.size() == 1) {
+            return count(triples.get(0)) > 0;
+        }
+        int bestPos = mostRestrictiveTriple(triples);
+        if (bestPos == -1) {
+            return false;
+        }
 
         List<String[]> rem = new ArrayList<String[]>(triples);
-    	String[] bestTriple = triples.get(bestPos);
-    	switch (numVariables(bestTriple)) {
-    	case 0:
-    		if(!contains(bestTriple)) {
-    			return false;
-    		}
-    		rem.remove(bestPos);
-    		return existsBS(rem);
-    	case 1:
-    		rem.remove(bestPos);
-    		int firstVarIdx = getFirstVarPos(bestTriple);
-    		try (Instantiator insty = new Instantiator(rem, bestTriple[firstVarIdx])) {
-    			for (String inst : resultsOneVariable(bestTriple).keySet()) {
-    				if(existsBS(insty.instantiate(inst))) {
-    					return true;
-    				}
-    			}
-    		}
-    		return false;
-		case 2:
-			int firstVar = getFirstVarPos(bestTriple);
-			int secondVar = getSecondVarPos(bestTriple);
-			Map<String, Map<String, Int>> instantiations = resultsTwoVariables(bestTriple, firstVar, secondVar);
-			rem.remove(bestPos);
-			try (Instantiator insty1 = new Instantiator(rem,
-					bestTriple[firstVar]);
-					Instantiator insty2 = new Instantiator(rem,
-							bestTriple[secondVar])) {
-				for (String val1 : instantiations.keySet()) {
-					insty1.instantiate(val1);
-					for (String val2 : instantiations.get(val1).keySet()) {
-						if (existsBS(insty2.instantiate(val2)))
-							return (true);
-					}
-				}
-			}
-			return false;
-		case 3:
-		default:
-			return getSize() > 0;
-    	}
+        String[] bestTriple = triples.get(bestPos);
+        switch (numVariables(bestTriple)) {
+        case 0:
+            if(!contains(bestTriple)) {
+                return false;
+            }
+            rem.remove(bestPos);
+            return existsBS(rem);
+        case 1:
+            rem.remove(bestPos);
+            int firstVarIdx = getFirstVarPos(bestTriple);
+            try (Instantiator insty = new Instantiator(rem, bestTriple[firstVarIdx])) {
+                for (String inst : resultsOneVariable(bestTriple).keySet()) {
+                    if(existsBS(insty.instantiate(inst))) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        case 2:
+            int firstVar = getFirstVarPos(bestTriple);
+            int secondVar = getSecondVarPos(bestTriple);
+            Map<String, Map<String, Int>> instantiations = resultsTwoVariables(bestTriple, firstVar, secondVar);
+            rem.remove(bestPos);
+            try (Instantiator insty1 = new Instantiator(rem,
+                    bestTriple[firstVar]);
+                    Instantiator insty2 = new Instantiator(rem,
+                            bestTriple[secondVar])) {
+                for (String val1 : instantiations.keySet()) {
+                    insty1.instantiate(val1);
+                    for (String val2 : instantiations.get(val1).keySet()) {
+                        if (existsBS(insty2.instantiate(val2)))
+                            return (true);
+                    }
+                }
+            }
+            return false;
+        case 3:
+        default:
+            return getSize() > 0;
+        }
     }
     
     /**
@@ -933,25 +933,25 @@ public class KB {
      * @return
      */
     protected Map<String, Int> resultsOneVariable(String... projectionTriple) {
-    	Map<String, Int> output = null;
-    	Map<String, Map<String, Int>> outputTmp = null;
-		if (isVariable(projectionTriple[0])) {
-			outputTmp = relationObjectSubjectMap.get(projectionTriple[1]);
-			if (outputTmp!=null)
-				output = outputTmp.get(projectionTriple[2]);
-		} else if (isVariable(projectionTriple[1])) {
-			outputTmp = objectSubjectRelationMap.get(projectionTriple[2]);
-			if (outputTmp!=null)
-				output = outputTmp.get(projectionTriple[0]);
-		} else if (isVariable(projectionTriple[2])) {
-			outputTmp = subjectRelationObjectMap.get(projectionTriple[0]);
-			if (outputTmp!=null)
-				output = outputTmp.get(projectionTriple[1]);
-		}
-    	if (output == null) {
-    		output = new HashMap<String, Int>();
-    	}
-    	return output;
+        Map<String, Int> output = null;
+        Map<String, Map<String, Int>> outputTmp = null;
+        if (isVariable(projectionTriple[0])) {
+            outputTmp = relationObjectSubjectMap.get(projectionTriple[1]);
+            if (outputTmp!=null)
+                output = outputTmp.get(projectionTriple[2]);
+        } else if (isVariable(projectionTriple[1])) {
+            outputTmp = objectSubjectRelationMap.get(projectionTriple[2]);
+            if (outputTmp!=null)
+                output = outputTmp.get(projectionTriple[0]);
+        } else if (isVariable(projectionTriple[2])) {
+            outputTmp = subjectRelationObjectMap.get(projectionTriple[0]);
+            if (outputTmp!=null)
+                output = outputTmp.get(projectionTriple[1]);
+        }
+        if (output == null) {
+            output = new HashMap<String, Int>();
+        }
+        return output;
     }
     
     /**
@@ -962,43 +962,43 @@ public class KB {
      * @return
      */
     protected Map<String, Map<String, Int>> resultsTwoVariables(String[] triple, int pos1, int pos2) {
-    	Map<String, Map<String, Int>> output = null;
-    	switch (pos1) {
-    	case 0:
-    		switch (pos2) {
-    		case 1:
-    			output = objectSubjectRelationMap.get(triple[2]);
-    			break;
-    		case 2:
-    			output = relationSubjectObjectMap.get(triple[1]);
-    			break;
-    		}
-			break;
-    	case 1:
-    		switch (pos2) {
-    		case 0:
-    			output = objectRelationSubjectMap.get(triple[2]);
-    			break;
-    		case 2:
-    			output = subjectRelationObjectMap.get(triple[0]);
-    			break;
-    		}
-			break;
-    	case 2:
-    		switch (pos2) {
-    		case 0:
-    			output = relationObjectSubjectMap.get(triple[1]);
-    			break;
-    		case 1:
-    			output = subjectObjectRelationMap.get(triple[0]);
-    			break;
-    		}
-			break;
-    	}
-    	if (output == null) {
-    		output = new HashMap<String, Map<String, Int>>();
-    	}
-    	return output;
+        Map<String, Map<String, Int>> output = null;
+        switch (pos1) {
+        case 0:
+            switch (pos2) {
+            case 1:
+                output = objectSubjectRelationMap.get(triple[2]);
+                break;
+            case 2:
+                output = relationSubjectObjectMap.get(triple[1]);
+                break;
+            }
+            break;
+        case 1:
+            switch (pos2) {
+            case 0:
+                output = objectRelationSubjectMap.get(triple[2]);
+                break;
+            case 2:
+                output = subjectRelationObjectMap.get(triple[0]);
+                break;
+            }
+            break;
+        case 2:
+            switch (pos2) {
+            case 0:
+                output = relationObjectSubjectMap.get(triple[1]);
+                break;
+            case 1:
+                output = subjectObjectRelationMap.get(triple[0]);
+                break;
+            }
+            break;
+        }
+        if (output == null) {
+            output = new HashMap<String, Map<String, Int>>();
+        }
+        return output;
     }
     
     /**
@@ -1010,60 +1010,60 @@ public class KB {
      * @return
      */
     protected Map<String, Map<String, Map<String, Int>>> resultsThreeVariables(String[] triples, int pos1, int pos2, int pos3) {
-    	switch (pos1) {
-    	case 0:
-    		switch (pos2) {
-    		case 1:
-    			return subjectRelationObjectMap;
-    		case 2:
-    			return subjectObjectRelationMap;
-    		}
-    	case 1:
-    		switch (pos2) {
-    		case 0:
-    			return relationSubjectObjectMap;
-    		case 2:
-    			return relationObjectSubjectMap;
-    		}
-    	case 2:
-    		switch (pos2) {
-    		case 0:
-    			return objectSubjectRelationMap;
-    		case 1:
-    			return objectRelationSubjectMap;
-    		}
-    	}
-    	return null;
+        switch (pos1) {
+        case 0:
+            switch (pos2) {
+            case 1:
+                return subjectRelationObjectMap;
+            case 2:
+                return subjectObjectRelationMap;
+            }
+        case 1:
+            switch (pos2) {
+            case 0:
+                return relationSubjectObjectMap;
+            case 2:
+                return relationObjectSubjectMap;
+            }
+        case 2:
+            switch (pos2) {
+            case 0:
+                return objectSubjectRelationMap;
+            case 1:
+                return objectRelationSubjectMap;
+            }
+        }
+        return null;
     }
 
-	public double inverseFunctionality(String relation) {
-		return relationObjectSubjectMap.get(relation).size() * 1.0 / relationSize.get(relation).value;
-	}
+    public double inverseFunctionality(String relation) {
+        return relationObjectSubjectMap.get(relation).size() * 1.0 / relationSize.get(relation).value;
+    }
 
-	public double colFunctionality(String relation, Column col) {
-		if (col == Column.Subject)
-			return functionality(relation);
-		else if (col == Column.Object)
-			return inverseFunctionality(relation);
-		else
-			return -1.0;
-	}
-	
-	public boolean isFunctional(String relation) {
-		return functionality(relation) >= inverseFunctionality(relation);
-	}
-	
-	public double functionality(String relation, boolean inversed) {
-		if (inversed)
-			return inverseFunctionality(relation);
-		else 
-			return functionality(relation);
-	}
-	
-	public double inverseFunctionality(String relation, boolean inversed) {
-		if (inversed)
-			return functionality(relation);
-		else 
-			return inverseFunctionality(relation);
-	}
+    public double colFunctionality(String relation, Column col) {
+        if (col == Column.Subject)
+            return functionality(relation);
+        else if (col == Column.Object)
+            return inverseFunctionality(relation);
+        else
+            return -1.0;
+    }
+    
+    public boolean isFunctional(String relation) {
+        return functionality(relation) >= inverseFunctionality(relation);
+    }
+    
+    public double functionality(String relation, boolean inversed) {
+        if (inversed)
+            return inverseFunctionality(relation);
+        else 
+            return functionality(relation);
+    }
+    
+    public double inverseFunctionality(String relation, boolean inversed) {
+        if (inversed)
+            return functionality(relation);
+        else 
+            return inverseFunctionality(relation);
+    }
 }

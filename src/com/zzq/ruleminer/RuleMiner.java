@@ -46,14 +46,14 @@ public class RuleMiner {
         Option maxDepthOpt = OptionBuilder.withArgName("max-depth")
                 .hasArg()
                 .withDescription("Maximum number of atoms in the antecedent and succedent of rules. "
-                		+ "Default: 3")
+                        + "Default: 3")
                 .create("maxad");
 
         @SuppressWarnings("static-access")
         Option stdConfThresholdOpt = OptionBuilder.withArgName("min-std-confidence")
                 .hasArg()
                 .withDescription("Minimum standard confidence threshold. "
-                		+ "This value is not used for pruning, only for filtering of the results. Default: 0.0")
+                        + "This value is not used for pruning, only for filtering of the results. Default: 0.0")
                 .create("minc");
 
         @SuppressWarnings("static-access")
@@ -71,16 +71,22 @@ public class RuleMiner {
                 .create("numThread");
 
         @SuppressWarnings("static-access")
-        Option allowConst = OptionBuilder.withArgName("allowConst")
+        Option allowConstOpt = OptionBuilder.withArgName("allowConst")
                 .withDescription("allowConst")
                 .create("const");
+
+        @SuppressWarnings("static-access")
+        Option allowOpenOpt = OptionBuilder.withArgName("allowOpenedAtoms")
+                .withDescription("allowOpenedAtoms")
+                .create("open");
 
         options.addOption(stdConfThresholdOpt);
         options.addOption(pcaConfThresholdOpt);
         options.addOption(headCoverageOpt);
         options.addOption(maxDepthOpt);
         options.addOption(numThreadOpt);
-        options.addOption(allowConst);
+        options.addOption(allowConstOpt);
+        options.addOption(allowOpenOpt);
         
         CommandLine cli = null;
 
@@ -94,8 +100,8 @@ public class RuleMiner {
         String[] leftOverArgs = cli.getArgs();
         List<File> files = new ArrayList<File>();
         for (String str : leftOverArgs) {
-        	File file = new File(str);
-        	files.add(file);
+            File file = new File(str);
+            files.add(file);
         }
         if (files.isEmpty()) {
             System.out.println("Please add file(s)!");
@@ -128,11 +134,15 @@ public class RuleMiner {
         }
 
         if (cli.hasOption("numThread")) {
-        	numThread = Integer.parseInt(cli.getOptionValue("numThread"));
+            numThread = Integer.parseInt(cli.getOptionValue("numThread"));
         }
 
         if (cli.hasOption("const")) {
-        	miningAssistant.setAllowConstants(true);
+            miningAssistant.setAllowConstants(true);
+        }
+
+        if (cli.hasOption("open")) {
+            miningAssistant.setAllowOpenedAtoms(true);
         }
         
         try {
@@ -147,9 +157,9 @@ public class RuleMiner {
         Collection<Rule> out = new LinkedHashSet<Rule>();
         Collection<Rule> q = null;
         if (miningAssistant.getAllowConstants()) {
-        	q = miningAssistant.getInitialAtomsWithInstantiator(100);
+            q = miningAssistant.getInitialAtomsWithInstantiator(100);
         } else {
-        	q = miningAssistant.getInitialAtoms(100);
+            q = miningAssistant.getInitialAtoms(100);
         }
         
         System.out.println("Using " + miningAssistant.getConfidenceMetric());
@@ -158,68 +168,69 @@ public class RuleMiner {
         System.out.println("Minimum HeadCoverage Threshold: " + miningAssistant.getMinHeadCoverage());
         System.out.println("Max Depth: " + miningAssistant.getMaxLen());
         System.out.println("num thread: " + this.numThread);
+        System.out.println("allow const: " + miningAssistant.getAllowConstants());
         System.out.println("Rule\tStdConfidence\tPcaConfidence\tSupport");
         
         MiningThread[] threads = new MiningThread[numThread];
         for (int i=0; i<numThread; i++) {
-        	threads[i] = new MiningThread(q, out);
+            threads[i] = new MiningThread(q, out);
         }
         for (int i=0; i<numThread; i++) {
-        	threads[i].start();
+            threads[i].start();
         }
         for (int i=0; i<numThread; i++) {
-        	try {
-				threads[i].join();
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
+            try {
+                threads[i].join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
         return out;
     }
     
     class MiningThread extends Thread {
-    	Collection<Rule> q;
-    	Collection<Rule> out;
-    	
-    	public MiningThread(Collection<Rule> seeds, Collection<Rule> output) {
-    		q = seeds;
-    		out = output;
-    	}
-    	
-    	@Override
-    	public void run() {
-    		while(true) {
+        Collection<Rule> q;
+        Collection<Rule> out;
+        
+        public MiningThread(Collection<Rule> seeds, Collection<Rule> output) {
+            q = seeds;
+            out = output;
+        }
+        
+        @Override
+        public void run() {
+            while(true) {
                 Rule r = null;
                 synchronized (q) {
-	                Iterator<Rule> iterator = q.iterator();
-	                if (iterator.hasNext()) {
-	                	r = iterator.next();
-	                	iterator.remove();
-	                } else {
-	                	break;
-	                }
+                    Iterator<Rule> iterator = q.iterator();
+                    if (iterator.hasNext()) {
+                        r = iterator.next();
+                        iterator.remove();
+                    } else {
+                        break;
+                    }
                 }
 
                 if(miningAssistant.acceptForOutput(r)) {
                     synchronized (out) {
-                    	out.add(r);
-	                    System.out.println(r.toString() + "," + r.getStdConfidence() + "," + r.getPcaConfidence() + "," + r.getSupport() + "," + r.flag);
-	                    try {
-	                        outputStream.write((r.toString() + "," + r.getStdConfidence() + "," + r.getPcaConfidence() + "," + r.getSupport() + "\n").getBytes());
-	                    } catch (IOException e) {
-	                        e.printStackTrace();
-	                    }
-					}
+                        out.add(r);
+                        System.out.println(r.toString() + "," + r.getStdConfidence() + "," + r.getPcaConfidence() + "," + r.getSupport() + "," + r.flag);
+                        try {
+                            outputStream.write((r.toString() + "," + r.getStdConfidence() + "," + r.getPcaConfidence() + "," + r.getSupport() + "\n").getBytes());
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
                 }
                 
                 if(!r.isPerfect() && r.length() < miningAssistant.getMaxLen()) {
                     Collection<Rule> R = miningAssistant.refine(r);
                     synchronized (q) {
-                    	q.addAll(R);
+                        q.addAll(R);
                     }
                 }
             }
-    	}
+        }
     }
     
     public static void main(String args[]) {
@@ -227,9 +238,9 @@ public class RuleMiner {
         if (ruleMiner.init(args)) {
             System.out.println("Mining......Start");
             long t1 = System.currentTimeMillis();
-	        Collection<Rule> rules = ruleMiner.mining();
-	        //ruleMiner.outputRules(rules);
-	        long t2 = System.currentTimeMillis();
+            Collection<Rule> rules = ruleMiner.mining();
+            //ruleMiner.outputRules(rules);
+            long t2 = System.currentTimeMillis();
             System.out.println("Mining......OK");
             System.out.println("Mined " + rules.size() + " rules");
             System.out.println("Total Time: " + (t2 - t1) / 1000.0 + " s");

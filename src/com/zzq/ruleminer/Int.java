@@ -10,6 +10,6 @@ public class Int
     }
     
     public String toString() {
-    	return String.valueOf(this.value);
+        return String.valueOf(this.value);
     }
 }
