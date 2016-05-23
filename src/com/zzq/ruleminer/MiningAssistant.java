@@ -44,6 +44,8 @@ public class MiningAssistant {
     
     private String freeVar = "?x100";
     
+    private int thresholdMulti = 1;
+    
     public MiningAssistant(KB kb) {
         this.setKb(kb);
         this.headCardinalities = new HashMap<String, Double>();
@@ -120,6 +122,14 @@ public class MiningAssistant {
 
     public void setFreeVar(String freeVar) {
         this.freeVar = freeVar;
+    }
+
+    public int getThresholdMulti() {
+        return thresholdMulti;
+    }
+
+    public void setThresholdMulti(int thresholdMulti) {
+        this.thresholdMulti = thresholdMulti;
     }
 
     public Collection<Rule> getInitialAtoms(double minSupportThreshold) {
@@ -673,10 +683,6 @@ public class MiningAssistant {
         if (!in.getOpened()) {
             return output;
         }
-        if (in.getTriples().size() == 2) {
-            int a = 1;
-            a++;
-        }
         String[] newTriple = in.getTriplePattern();
         for (int openPos=0; openPos<=2; openPos += 2) {
             int fixedPos = 2 - openPos;
@@ -835,7 +841,7 @@ public class MiningAssistant {
             return false;
         }
         computeStdConfidence(candidate);
-        computePcaConfidence(candidate);
+//        computePcaConfidence(candidate);
         if (candidate.getPcaConfidence() < this.minPcaConfidence
                 || candidate.getStdConfidence() < this.minStdConfidence)
             return false;
@@ -861,16 +867,11 @@ public class MiningAssistant {
     public Collection<Rule> refine(Rule in) {
         double threshold = this.getThreshold(in);
         
-        if (in.getOpened() && in.getTriples().size() == 2) {
-            int a = 1;
-            a++;
-        }
-        
         Collection<Rule> out = new LinkedHashSet<Rule>();
         Collection<Rule> danglingAtoms = getDanglingAtoms(in, threshold);
         Collection<Rule> instantiatedAtoms = getInstantiatedAtoms(in, danglingAtoms, threshold);
         Collection<Rule> closingAtoms = getClosingAtoms(in, threshold);
-        Collection<Rule> openedAtoms = getOpenedAtoms(in, threshold);
+        Collection<Rule> openedAtoms = getOpenedAtoms(in, threshold * this.getThresholdMulti());
         
         out.addAll(danglingAtoms);
         out.addAll(instantiatedAtoms);

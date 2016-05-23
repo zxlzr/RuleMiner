@@ -77,6 +77,7 @@ public class RuleMiner {
 
         @SuppressWarnings("static-access")
         Option allowOpenOpt = OptionBuilder.withArgName("allowOpenedAtoms")
+                .hasArg()
                 .withDescription("allowOpenedAtoms")
                 .create("open");
 
@@ -142,7 +143,9 @@ public class RuleMiner {
         }
 
         if (cli.hasOption("open")) {
+            String thresholdMultiStr = cli.getOptionValue("open");
             miningAssistant.setAllowOpenedAtoms(true);
+            miningAssistant.setThresholdMulti(Integer.parseInt(thresholdMultiStr));
         }
         
         try {
