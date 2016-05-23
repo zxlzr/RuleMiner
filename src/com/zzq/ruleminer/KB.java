@@ -66,6 +66,9 @@ public class KB {
                     break;
                 query.get(positions[i] / 3)[positions[i] % 3] = value;
             }
+//            if (positions.length == 0 || positions[0] == -1) {
+//                return new ArrayList<>();
+//            }
             return (query);
         }
 
@@ -405,10 +408,18 @@ public class KB {
                 try (Instantiator insty1 = new Instantiator(otherTriples, projectionTriple[firstVar]);
                         Instantiator insty2 = new Instantiator(otherTriples, projectionTriple[secondVar])) { 
                     for (String val1 : instantiations.keySet()) {
+                        boolean has1 = insty1.positions.length > 0 && insty1.positions[0] != -1;
                         insty1.instantiate(val1);
                         for (String val2 : instantiations.get(val1).keySet()) {
+                            boolean has2 = insty2.positions.length > 0 && insty2.positions[0] != -1;
                             Set<String> distinct = selectDistinct(variable, insty2.instantiate(val2));
                             MapIncrease(result, distinct);
+                            if (!has2) {
+                                break;
+                            }
+                        }
+                        if (!has1) {
+                            break;
                         }
                     }
                 }
@@ -492,9 +503,12 @@ public class KB {
      * @param query
      * @return
      */
-    private Set<String> selectDistinct(String variable, List<String[]> query) {
+    public Set<String> selectDistinct(String variable, List<String[]> query) {
         if (query.size() == 1) {
             String[] triple = query.get(0);
+            if (!triple[0].equals(variable) && !triple[1].equals(variable) && !triple[2].equals(variable)) {
+                return Collections.emptySet();
+            }
             switch(numVariables(triple)) {
             case 0:
                 return Collections.emptySet();
@@ -741,14 +755,14 @@ public class KB {
      * @param triples
      * @return
      */
-    protected long count(String... triples) {
-        switch(numVariables(triples)) {
+    public long count(String... triple) {
+        switch(numVariables(triple)) {
         case 0:
-            return contains(triples) ? 1 : 0;
+            return contains(triple) ? 1 : 0;
         case 1:
-            return countOneVariable(triples);
+            return countOneVariable(triple);
         case 2:
-            return countTwoVariable(triples);
+            return countTwoVariable(triple);
         case 3:
             return getSize();
         }

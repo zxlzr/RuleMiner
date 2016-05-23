@@ -42,6 +42,8 @@ public class Rule {
     
     private double pcaBodySize = 0.0;
     private double stdBodySize = 0.0;
+    
+    private String fixedVar = "";
 
     public Rule() {
         this.setKb(KB.getInstance());
@@ -222,6 +224,14 @@ public class Rule {
         //this.parent = parent;
         if (parent != null)
             this.ancestors.add(parent);
+    }
+
+    public String getFixedVar() {
+        return fixedVar;
+    }
+
+    public void setFixedVar(String fixedVar) {
+        this.fixedVar = fixedVar;
     }
 
     public void add(String []str) {

@@ -44,6 +44,10 @@ public class MiningAssistant {
     
     private String freeVar = "?x100";
     
+    private int thresholdOpenedMulti = 1;
+    
+    private int thresholdConstMulti = 1;
+    
     public MiningAssistant(KB kb) {
         this.setKb(kb);
         this.headCardinalities = new HashMap<String, Double>();
@@ -120,6 +124,22 @@ public class MiningAssistant {
 
     public void setFreeVar(String freeVar) {
         this.freeVar = freeVar;
+    }
+
+    public int getThresholdOpenedMulti() {
+        return thresholdOpenedMulti;
+    }
+
+    public void setThresholdOpenedMulti(int thresholdOpenedMulti) {
+        this.thresholdOpenedMulti = thresholdOpenedMulti;
+    }
+
+    public int getThresholdConstMulti() {
+        return thresholdConstMulti;
+    }
+
+    public void setThresholdConstMulti(int thresholdConstMulti) {
+        this.thresholdConstMulti = thresholdConstMulti;
     }
 
     public Collection<Rule> getInitialAtoms(double minSupportThreshold) {
@@ -673,10 +693,6 @@ public class MiningAssistant {
         if (!in.getOpened()) {
             return output;
         }
-        if (in.getTriples().size() == 2) {
-            int a = 1;
-            a++;
-        }
         String[] newTriple = in.getTriplePattern();
         for (int openPos=0; openPos<=2; openPos += 2) {
             int fixedPos = 2 - openPos;
@@ -704,6 +720,7 @@ public class MiningAssistant {
                     candidate.setParent(in);
                     output.add(candidate);
                     candidate.flag = new String("OpenedAtoms");
+                    candidate.setFixedVar(fixedVar);
                 }
                 newTriple[fixedPos] = tmp;
             }
@@ -814,7 +831,21 @@ public class MiningAssistant {
     }
 
     protected long computeStdBodySize(String var1, String var2, Rule query){
-        long result = this.kb.countDistinctPairs(var1, var2, query.getBody());
+        long result = 0;
+        if (!query.getOpened()) {
+            result = this.kb.countDistinctPairs(var1, var2, query.getBody());
+        } else {
+            String fixedVar = query.getFixedVar();
+            if (KB.isVariable(fixedVar)) {
+                for (String[] triple : query.getBody()) {
+                    String[] newTriple = triple.clone();
+                    Map<String, Int> map = this.kb.countProjectionBindings(fixedVar, newTriple, query.getBody());
+                    for (Entry<String, Int> entry : map.entrySet()) {
+                        result += entry.getValue().value;
+                    }
+                }
+            }
+        }
         return result;
     }
     
@@ -835,7 +866,7 @@ public class MiningAssistant {
             return false;
         }
         computeStdConfidence(candidate);
-        computePcaConfidence(candidate);
+//        computePcaConfidence(candidate);
         if (candidate.getPcaConfidence() < this.minPcaConfidence
                 || candidate.getStdConfidence() < this.minStdConfidence)
             return false;
@@ -861,16 +892,11 @@ public class MiningAssistant {
     public Collection<Rule> refine(Rule in) {
         double threshold = this.getThreshold(in);
         
-        if (in.getOpened() && in.getTriples().size() == 2) {
-            int a = 1;
-            a++;
-        }
-        
         Collection<Rule> out = new LinkedHashSet<Rule>();
         Collection<Rule> danglingAtoms = getDanglingAtoms(in, threshold);
-        Collection<Rule> instantiatedAtoms = getInstantiatedAtoms(in, danglingAtoms, threshold);
+        Collection<Rule> instantiatedAtoms = getInstantiatedAtoms(in, danglingAtoms, threshold * this.getThresholdConstMulti());
         Collection<Rule> closingAtoms = getClosingAtoms(in, threshold);
-        Collection<Rule> openedAtoms = getOpenedAtoms(in, threshold);
+        Collection<Rule> openedAtoms = getOpenedAtoms(in, threshold * this.getThresholdOpenedMulti());
         
         out.addAll(danglingAtoms);
         out.addAll(instantiatedAtoms);
