@@ -44,7 +44,9 @@ public class MiningAssistant {
     
     private String freeVar = "?x100";
     
-    private int thresholdMulti = 1;
+    private int thresholdOpenedMulti = 1;
+    
+    private int thresholdConstMulti = 1;
     
     public MiningAssistant(KB kb) {
         this.setKb(kb);
@@ -124,12 +126,20 @@ public class MiningAssistant {
         this.freeVar = freeVar;
     }
 
-    public int getThresholdMulti() {
-        return thresholdMulti;
+    public int getThresholdOpenedMulti() {
+        return thresholdOpenedMulti;
     }
 
-    public void setThresholdMulti(int thresholdMulti) {
-        this.thresholdMulti = thresholdMulti;
+    public void setThresholdOpenedMulti(int thresholdOpenedMulti) {
+        this.thresholdOpenedMulti = thresholdOpenedMulti;
+    }
+
+    public int getThresholdConstMulti() {
+        return thresholdConstMulti;
+    }
+
+    public void setThresholdConstMulti(int thresholdConstMulti) {
+        this.thresholdConstMulti = thresholdConstMulti;
     }
 
     public Collection<Rule> getInitialAtoms(double minSupportThreshold) {
@@ -710,6 +720,7 @@ public class MiningAssistant {
                     candidate.setParent(in);
                     output.add(candidate);
                     candidate.flag = new String("OpenedAtoms");
+                    candidate.setFixedVar(fixedVar);
                 }
                 newTriple[fixedPos] = tmp;
             }
@@ -820,7 +831,21 @@ public class MiningAssistant {
     }
 
     protected long computeStdBodySize(String var1, String var2, Rule query){
-        long result = this.kb.countDistinctPairs(var1, var2, query.getBody());
+        long result = 0;
+        if (!query.getOpened()) {
+            result = this.kb.countDistinctPairs(var1, var2, query.getBody());
+        } else {
+            String fixedVar = query.getFixedVar();
+            if (KB.isVariable(fixedVar)) {
+                for (String[] triple : query.getBody()) {
+                    String[] newTriple = triple.clone();
+                    Map<String, Int> map = this.kb.countProjectionBindings(fixedVar, newTriple, query.getBody());
+                    for (Entry<String, Int> entry : map.entrySet()) {
+                        result += entry.getValue().value;
+                    }
+                }
+            }
+        }
         return result;
     }
     
@@ -869,9 +894,9 @@ public class MiningAssistant {
         
         Collection<Rule> out = new LinkedHashSet<Rule>();
         Collection<Rule> danglingAtoms = getDanglingAtoms(in, threshold);
-        Collection<Rule> instantiatedAtoms = getInstantiatedAtoms(in, danglingAtoms, threshold);
+        Collection<Rule> instantiatedAtoms = getInstantiatedAtoms(in, danglingAtoms, threshold * this.getThresholdConstMulti());
         Collection<Rule> closingAtoms = getClosingAtoms(in, threshold);
-        Collection<Rule> openedAtoms = getOpenedAtoms(in, threshold * this.getThresholdMulti());
+        Collection<Rule> openedAtoms = getOpenedAtoms(in, threshold * this.getThresholdOpenedMulti());
         
         out.addAll(danglingAtoms);
         out.addAll(instantiatedAtoms);
