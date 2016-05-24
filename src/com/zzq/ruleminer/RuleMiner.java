@@ -307,7 +307,7 @@ public class RuleMiner {
             System.out.println("Mining......Start");
             long t1 = System.currentTimeMillis();
             Collection<Rule> rules = ruleMiner.mining();
-            //ruleMiner.outputRules(rules);
+//            ruleMiner.outputRules(rules);
 //            ruleMiner.ruleConsumer.outputToStdout();
             ruleMiner.ruleConsumer.outputResultInfo();
             ruleMiner.ruleConsumer.outputToFile();
