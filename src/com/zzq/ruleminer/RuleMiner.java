@@ -213,7 +213,7 @@ public class RuleMiner {
                 if(miningAssistant.acceptForOutput(r)) {
                     synchronized (out) {
                         out.add(r);
-                        ruleConsumer.addRule(r, true);
+                        ruleConsumer.addRule(r);
                     }
                 }
                 
@@ -232,12 +232,13 @@ public class RuleMiner {
         public Collection <Rule> instantiatedRules = new LinkedHashSet<Rule>();
         public Collection <Rule> openedRules = new LinkedHashSet<Rule>();
         public OutputStream outputStream;
+        public boolean outputForRealTime = true;
         
         public RuleConsumer(OutputStream outputStream) {
             this.outputStream = outputStream;
         }
         
-        public void addRule(Rule rule, boolean out) {
+        public void addRule(Rule rule) {
             if (rule.getOpened()) {
                 openedRules.add(rule);
             } else if (rule.flag.equals("InstantiatedAtoms")) {
@@ -245,7 +246,7 @@ public class RuleMiner {
             } else {
                 closedRules.add(rule);
             }
-            if (out) {
+            if (outputForRealTime) {
                 System.out.println(rule.toString() + "," + rule.getStdConfidence() + "," + rule.getPcaConfidence() + "," + rule.getSupport() + "," + rule.flag);
             }
         }
@@ -306,8 +307,8 @@ public class RuleMiner {
         if (ruleMiner.init(args)) {
             System.out.println("Mining......Start");
             long t1 = System.currentTimeMillis();
+//            ruleMiner.ruleConsumer.outputForRealTime = false;
             Collection<Rule> rules = ruleMiner.mining();
-//            ruleMiner.outputRules(rules);
 //            ruleMiner.ruleConsumer.outputToStdout();
             ruleMiner.ruleConsumer.outputResultInfo();
             ruleMiner.ruleConsumer.outputToFile();

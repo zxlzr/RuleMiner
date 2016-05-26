@@ -108,6 +108,7 @@ public class Rule {
         this.pcaBodySize = rule.pcaBodySize;
         this.stdBodySize = rule.stdBodySize;
         this.opened = rule.opened;
+        this.flag = new String(rule.flag);
     }
     
     public KB getKb() {
@@ -567,6 +568,26 @@ public class Rule {
             }
         }
         return fixedVars;
+    }
+    
+    public int numInstantiators() {
+        int cnt = 0;
+        for (String[] triple : this.getTriples()) {
+            if (!KB.isVariable(triple[0])) {
+                cnt++;
+            }
+            if (!KB.isVariable(triple[2])) {
+                cnt++;
+            }
+        }
+        return cnt;
+    }
+    
+    public boolean equalsTriple(String[] triple, int i) {
+        return this.getTriples().size() > i
+                && triple[0].equals(this.getTriples().get(i)[0])
+                && triple[1].equals(this.getTriples().get(i)[1])
+                && triple[2].equals(this.getTriples().get(i)[2]);
     }
     
     public static void main(String[] args) {
