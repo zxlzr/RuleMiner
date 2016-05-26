@@ -203,36 +203,38 @@ public class MiningAssistant {
                 Map<String, Int> objects = this.kb.countProjectionBindings(succedent[2], succedent, otherProjectionTriples);
                 for (Entry<String, Int> object : objects.entrySet()) {
                     if (object.getValue().value >= minSupportThreshold) {
-                        succedent = succedent.clone();
-                        succedent[2] = object.getKey();
-                        nVars = KB.numVariables(succedent);
+                        String[] newsuccedent = succedent.clone();
+                        newsuccedent[2] = object.getKey();
+                        nVars = KB.numVariables(newsuccedent);
                         if(nVars == 1){
-                            countVarPos = KB.getFirstVarPos(succedent);
+                            countVarPos = KB.getFirstVarPos(newsuccedent);
                         }else{
-                            countVarPos = kb.isFunctional(succedent[1]) ? 0 : 2;
+                            countVarPos = kb.isFunctional(newsuccedent[1]) ? 0 : 2;
                         }
                         
-                        candidate = new Rule(succedent, cardinality);
+                        candidate = new Rule(newsuccedent, object.getValue().value);
                         candidate.setFunctionalVariablePosition(countVarPos);
                         out.add(candidate);
+                        candidate.flag = new String("InstantiatedAtoms");
                     }
                 }
                 
                 Map<String, Int> subjects = this.kb.countProjectionBindings(succedent[0], succedent, otherProjectionTriples);
                 for (Entry<String, Int> subject : subjects.entrySet()) {
                     if (subject.getValue().value >= minSupportThreshold) {
-                        succedent = succedent.clone();
-                        succedent[0] = subject.getKey();
-                        nVars = KB.numVariables(succedent);
+                        String[] newsuccedent = succedent.clone();
+                        newsuccedent[0] = subject.getKey();
+                        nVars = KB.numVariables(newsuccedent);
                         if(nVars == 1){
-                            countVarPos = KB.getFirstVarPos(succedent);
+                            countVarPos = KB.getFirstVarPos(newsuccedent);
                         }else{
-                            countVarPos = kb.isFunctional(succedent[1]) ? 0 : 2;
+                            countVarPos = kb.isFunctional(newsuccedent[1]) ? 0 : 2;
                         }
                         
-                        candidate = new Rule(succedent, cardinality);
+                        candidate = new Rule(newsuccedent, subject.getValue().value);
                         candidate.setFunctionalVariablePosition(countVarPos);
                         out.add(candidate);
+                        candidate.flag = new String("InstantiatedAtoms");
                     }
                 }
             }
@@ -297,6 +299,10 @@ public class MiningAssistant {
                
                 rule.getTriples().add(newTriple);
 
+                if (rule.equalsTriple(new String[]{"?a", "<是公民>", "?b"}, 0)) {
+                    int a = 1;
+                    a++;
+                }
                 Map<String, Int> promisingRelations = this.kb.countProjectionBindings(newTriple[1], rule.getHead(), rule.getBody());
                 rule.getTriples().remove(nPatterns);
                 
@@ -484,7 +490,9 @@ public class MiningAssistant {
                                 candidate.setSupportRatio((double)cardinality / (double)this.kb.getSize());
                                 candidate.setParent(rule);
                                 output.add(candidate);
-                                candidate.flag = new String("ClosingAtoms");
+                                if(!candidate.flag.equals("InstantiatedAtoms")) {
+                                    candidate.flag = new String("ClosingAtoms");
+                                }
                             }
                         }
                     }
@@ -666,7 +674,10 @@ public class MiningAssistant {
                 // getInstantiatedAtoms(candidate, candidate, lastTriplePatternIndex, danglingPosition, minSupportThreshold, output);
                 String []danglingEdge = candidate.getTriples().get(lastTripplePatternIndex);
                 // TODO The next line may have some problems...
-                
+                if (rule.equalsTriple(new String[]{"?a", "<是公民>", "<United_Kingdom>"}, 0)) {
+                    int a = 1;
+                    a++;
+                }
                 Map<String, Int> constants = this.kb.countProjectionBindings(danglingEdge[danglingPosition], candidate.getHead(), candidate.getBody());
                 for (Entry<String, Int> constant : constants.entrySet()) {
                     long cardinality = constant.getValue().value;
@@ -714,9 +725,14 @@ public class MiningAssistant {
                     newTriple[1] = entry.getKey();
                     Rule candidate = new Rule(in, newTriple, entry.getValue().value);
                     newTriple[1] = tmp2;
+                    long sup = this.kb.countDistinct(fixedVar, candidate.getTriples());
+                    if (sup < minCardinality) {
+                        continue;
+                    }
                     if (!candidate.getRedundantAtoms().isEmpty()) {
                         continue;
                     }
+                    candidate.setSupport(sup);
                     candidate.setParent(in);
                     output.add(candidate);
                     candidate.flag = new String("OpenedAtoms");
@@ -837,13 +853,14 @@ public class MiningAssistant {
         } else {
             String fixedVar = query.getFixedVar();
             if (KB.isVariable(fixedVar)) {
-                for (String[] triple : query.getBody()) {
-                    String[] newTriple = triple.clone();
-                    Map<String, Int> map = this.kb.countProjectionBindings(fixedVar, newTriple, query.getBody());
-                    for (Entry<String, Int> entry : map.entrySet()) {
-                        result += entry.getValue().value;
-                    }
-                }
+//                for (String[] triple : query.getBody()) {
+//                    String[] newTriple = triple.clone();
+//                    Map<String, Int> map = this.kb.countProjectionBindings(fixedVar, newTriple, query.getBody());
+//                    for (Entry<String, Int> entry : map.entrySet()) {
+//                        result += entry.getValue().value;
+//                    }
+//                }
+                result += this.kb.countDistinct(fixedVar, query.getBody());
             }
         }
         return result;
@@ -863,6 +880,9 @@ public class MiningAssistant {
         if (!candidate.getOpened() && !candidate.isClosed())
             return false;
         if (candidate.getOpened() && candidate.getTriples().size() <= 1) {
+            return false;
+        }
+        if (candidate.flag.equals("InstantiatedAtoms") && candidate.numInstantiators() < 2) {
             return false;
         }
         computeStdConfidence(candidate);
