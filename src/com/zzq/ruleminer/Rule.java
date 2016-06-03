@@ -268,9 +268,9 @@ public class Rule {
         for (int i=this.triples.size() - 1; i>=0; i--) {
             strs = this.triples.get(i);
             if (i > 0)
-                out = out + strs[0] + " " + strs[1] + " " + strs[2] + ",";
+                out = out + strs[0] + " " + strs[1] + " " + strs[2] + "   ";
             else
-                out = out + strs[0] + " " + strs[1] + " " + strs[2];
+                out = out + "=>    " + strs[0] + " " + strs[1] + " " + strs[2];
         }
         return out;
     }

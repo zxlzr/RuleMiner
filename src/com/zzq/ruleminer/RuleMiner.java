@@ -213,7 +213,9 @@ public class RuleMiner {
                 if(miningAssistant.acceptForOutput(r)) {
                     synchronized (out) {
                         out.add(r);
-                        ruleConsumer.addRule(r);
+                        synchronized (ruleConsumer) {
+                            ruleConsumer.addRule(r);
+                        }
                     }
                 }
                 
@@ -247,20 +249,20 @@ public class RuleMiner {
                 closedRules.add(rule);
             }
             if (outputForRealTime) {
-                System.out.println(rule.toString() + "," + rule.getStdConfidence() + "," + rule.getPcaConfidence() + "," + rule.getSupport() + "," + rule.flag);
+                System.out.println(rule.toString() + "," + rule.getStdConfidence() + "," + /*rule.getPcaConfidence() + "," + */rule.getSupport() + "," + rule.flag);
             }
         }
         
         public void outputToFile() {
             try {
                 for (Rule r : closedRules) {
-                    outputStream.write((r.toString() + "," + r.getStdConfidence() + "," + r.getPcaConfidence() + "," + r.getSupport() + "\n").getBytes());
+                    outputStream.write((r.toString() + "," + r.getStdConfidence() + "," + /*r.getPcaConfidence() + "," + */r.getSupport() + "," + r.flag + "\n").getBytes());
                 }
                 for (Rule r : instantiatedRules) {
-                    outputStream.write((r.toString() + "," + r.getStdConfidence() + "," + r.getPcaConfidence() + "," + r.getSupport() + "\n").getBytes());
+                    outputStream.write((r.toString() + "," + r.getStdConfidence() + "," + /*r.getPcaConfidence() + "," + */r.getSupport() + "," + r.flag + "\n").getBytes());
                 }
                 for (Rule r : openedRules) {
-                    outputStream.write((r.toString() + "," + r.getStdConfidence() + "," + r.getPcaConfidence() + "," + r.getSupport() + "\n").getBytes());
+                    outputStream.write((r.toString() + "," + r.getStdConfidence() + "," + /*r.getPcaConfidence() + "," + */r.getSupport() + "," + r.flag + "\n").getBytes());
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -270,13 +272,13 @@ public class RuleMiner {
         public void outputToStdout() {
             try {
                 for (Rule r : closedRules) {
-                    System.out.println(r.toString() + "," + r.getStdConfidence() + "," + r.getPcaConfidence() + "," + r.getSupport() + "," + r.flag);
+                    System.out.println(r.toString() + "," + r.getStdConfidence() + "," + /*r.getPcaConfidence() + "," + */r.getSupport() + "," + r.flag);
                 }
                 for (Rule r : instantiatedRules) {
-                    System.out.println(r.toString() + "," + r.getStdConfidence() + "," + r.getPcaConfidence() + "," + r.getSupport() + "," + r.flag);
+                    System.out.println(r.toString() + "," + r.getStdConfidence() + "," + /*r.getPcaConfidence() + "," + */r.getSupport() + "," + r.flag);
                 }
                 for (Rule r : openedRules) {
-                    System.out.println(r.toString() + "," + r.getStdConfidence() + "," + r.getPcaConfidence() + "," + r.getSupport() + "," + r.flag);
+                    System.out.println(r.toString() + "," + r.getStdConfidence() + "," + /*r.getPcaConfidence() + "," + */r.getSupport() + "," + r.flag);
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -292,7 +294,7 @@ public class RuleMiner {
             System.out.println("num thread: " + numThread);
             System.out.println("allow const: " + miningAssistant.getAllowConstants());
             System.out.println("allow open: " + miningAssistant.getAllowOpenedAtoms());
-            System.out.println("Rule\tStdConfidence\tPcaConfidence\tSupport");
+            System.out.println("Rule\tStdConfidence\tSupport\tType");
         }
         
         public void outputResultInfo() {
